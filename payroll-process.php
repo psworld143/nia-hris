@@ -76,6 +76,14 @@ mysqli_stmt_bind_param($stmt, "i", $period_id);
 mysqli_stmt_execute($stmt);
 $employees_result = mysqli_stmt_get_result($stmt);
 
+// Get all active deduction types from database
+$deductions_query = "SELECT * FROM payroll_deduction_types WHERE is_active = 1 ORDER BY sort_order, name";
+$deductions_result = mysqli_query($conn, $deductions_query);
+$deduction_types = [];
+while ($deduction = mysqli_fetch_assoc($deductions_result)) {
+    $deduction_types[] = $deduction;
+}
+
 $page_title = 'Process Payroll - ' . $period['period_name'];
 include 'includes/header.php';
 ?>
@@ -291,6 +299,9 @@ include 'includes/header.php';
 const periodId = <?php echo $period_id; ?>;
 let currentEmployeeId = null;
 
+// Deduction types from database
+const deductionTypes = <?php echo json_encode($deduction_types); ?>;
+
 // Calculate payroll for a single employee
 function calculateRow(employeeId) {
     const empData = window.employeeData[employeeId];
@@ -313,11 +324,13 @@ function calculateRow(employeeId) {
     
     const grossPay = basicPay + overtimePay + nightDiffPay + allowancePay;
     
-    // Get deductions from employee data
-    const totalDeductions = empData.deductions.sss + empData.deductions.philhealth + 
-                           empData.deductions.pagibig + empData.deductions.tax +
-                           empData.deductions.sss_loan + empData.deductions.pagibig_loan +
-                           empData.deductions.salary_loan;
+    // Dynamically calculate total deductions from all deduction types
+    let totalDeductions = 0;
+    if (empData.deductions && typeof empData.deductions === 'object') {
+        Object.values(empData.deductions).forEach(deduction => {
+            totalDeductions += parseFloat(deduction) || 0;
+        });
+    }
     
     const netPay = grossPay - totalDeductions;
     
@@ -348,7 +361,7 @@ function calculateAll() {
     }, 500);
 }
 
-// Open deductions modal
+// Open deductions modal - DYNAMICALLY GENERATED FROM DATABASE
 function openDeductionsModal(employeeId) {
     currentEmployeeId = employeeId;
     const empData = window.employeeData[employeeId];
@@ -356,105 +369,94 @@ function openDeductionsModal(employeeId) {
     document.getElementById('deductionsTitle').innerHTML = 
         `<i class="fas fa-minus-circle text-red-600 mr-2"></i>Deductions for ${empData.name}`;
     
-    const deductionsHTML = `
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-            <h4 class="font-semibold text-blue-900 mb-2">Government Contributions (Mandatory)</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    // Group deductions by category
+    const categories = {
+        'mandatory': { title: 'Government Contributions (Mandatory)', color: 'blue', items: [] },
+        'loan': { title: 'Loan Deductions', color: 'yellow', items: [] },
+        'attendance': { title: 'Attendance Deductions', color: 'orange', items: [] },
+        'other': { title: 'Other Deductions', color: 'gray', items: [] }
+    };
+    
+    // Organize deductions by category
+    deductionTypes.forEach(deduction => {
+        if (categories[deduction.category]) {
+            categories[deduction.category].items.push(deduction);
+        }
+    });
+    
+    // Build HTML dynamically
+    let deductionsHTML = '';
+    
+    Object.keys(categories).forEach(catKey => {
+        const category = categories[catKey];
+        if (category.items.length === 0) return;
+        
+        const borderColor = `border-${category.color}-500`;
+        const bgColor = `bg-${category.color}-50`;
+        const textColor = `text-${category.color}-900`;
+        
+        deductionsHTML += `
+            <div class="${bgColor} border-l-4 ${borderColor} p-4">
+                <h4 class="font-semibold ${textColor} mb-3">${category.title}</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        `;
+        
+        category.items.forEach(deduction => {
+            const code = deduction.code.toLowerCase();
+            const deductionKey = code.replace(/_/g, '_');
+            const currentValue = empData.deductions[deductionKey] || 0;
+            
+            // Auto-check for mandatory deductions if employee has corresponding ID
+            let autoCheck = false;
+            let idInfo = '';
+            
+            if (code === 'sss' && empData.sss_number) {
+                autoCheck = true;
+                idInfo = `SSS #: ${empData.sss_number}`;
+            } else if (code === 'phic' && empData.philhealth_number) {
+                autoCheck = true;
+                idInfo = `PhilHealth #: ${empData.philhealth_number}`;
+            } else if (code === 'hdmf' && empData.pagibig_number) {
+                autoCheck = true;
+                idInfo = `Pag-IBIG #: ${empData.pagibig_number}`;
+            } else if (code === 'wtax' && empData.tin_number) {
+                autoCheck = true;
+                idInfo = `TIN: ${empData.tin_number}`;
+            } else if (currentValue > 0) {
+                autoCheck = true;
+            }
+            
+            deductionsHTML += `
                 <div>
                     <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_sss" ${empData.sss_number ? 'checked' : ''} 
-                               onchange="toggleDeduction('sss')"
+                        <input type="checkbox" 
+                               id="deduct_${deductionKey}" 
+                               data-deduction-code="${code}"
+                               ${autoCheck ? 'checked' : ''} 
+                               onchange="toggleDeduction('${deductionKey}')"
                                class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">SSS Contribution</span>
+                        <span class="ml-2 text-sm font-medium text-gray-700">${deduction.name}</span>
                     </label>
-                    <input type="number" id="deduction_sss" value="${empData.deductions.sss}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                    <p class="text-xs text-gray-500 mt-1">SSS #: ${empData.sss_number || 'Not set'}</p>
+                    <input type="number" 
+                           id="deduction_${deductionKey}" 
+                           value="${currentValue}" 
+                           step="0.01" 
+                           min="0"
+                           onchange="updateDeductionsTotal()"
+                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm"
+                           placeholder="${deduction.description || ''}">
+                    ${idInfo ? `<p class="text-xs text-gray-500 mt-1">${idInfo}</p>` : ''}
                 </div>
-                
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_philhealth" ${empData.philhealth_number ? 'checked' : ''} 
-                               onchange="toggleDeduction('philhealth')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">PhilHealth Contribution</span>
-                    </label>
-                    <input type="number" id="deduction_philhealth" value="${empData.deductions.philhealth}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                    <p class="text-xs text-gray-500 mt-1">PhilHealth #: ${empData.philhealth_number || 'Not set'}</p>
-                </div>
-                
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_pagibig" ${empData.pagibig_number ? 'checked' : ''} 
-                               onchange="toggleDeduction('pagibig')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Pag-IBIG Contribution</span>
-                    </label>
-                    <input type="number" id="deduction_pagibig" value="${empData.deductions.pagibig}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                    <p class="text-xs text-gray-500 mt-1">Pag-IBIG #: ${empData.pagibig_number || 'Not set'}</p>
-                </div>
-                
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_tax" ${empData.tin_number ? 'checked' : ''} 
-                               onchange="toggleDeduction('tax')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Withholding Tax</span>
-                    </label>
-                    <input type="number" id="deduction_tax" value="${empData.deductions.tax}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                    <p class="text-xs text-gray-500 mt-1">TIN: ${empData.tin_number || 'Not set'}</p>
+            `;
+        });
+        
+        deductionsHTML += `
                 </div>
             </div>
-        </div>
-        
-        <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
-            <h4 class="font-semibold text-yellow-900 mb-2">Loan Deductions (Optional)</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_sss_loan" ${empData.deductions.sss_loan > 0 ? 'checked' : ''} 
-                               onchange="toggleDeduction('sss_loan')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">SSS Loan</span>
-                    </label>
-                    <input type="number" id="deduction_sss_loan" value="${empData.deductions.sss_loan}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                </div>
-                
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_pagibig_loan" ${empData.deductions.pagibig_loan > 0 ? 'checked' : ''} 
-                               onchange="toggleDeduction('pagibig_loan')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Pag-IBIG Loan</span>
-                    </label>
-                    <input type="number" id="deduction_pagibig_loan" value="${empData.deductions.pagibig_loan}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                </div>
-                
-                <div>
-                    <label class="flex items-center mb-2">
-                        <input type="checkbox" id="deduct_salary_loan" ${empData.deductions.salary_loan > 0 ? 'checked' : ''} 
-                               onchange="toggleDeduction('salary_loan')"
-                               class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Salary Loan</span>
-                    </label>
-                    <input type="number" id="deduction_salary_loan" value="${empData.deductions.salary_loan}" 
-                           step="0.01" min="0"
-                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-green-500 text-sm">
-                </div>
-            </div>
-        </div>
-        
+        `;
+    });
+    
+    deductionsHTML += `
         <div class="bg-green-50 border-l-4 border-green-500 p-4">
             <div class="flex justify-between items-center">
                 <span class="font-semibold text-green-900">Total Deductions:</span>
@@ -482,15 +484,19 @@ function toggleDeduction(type) {
 }
 
 function updateDeductionsTotal() {
-    const sss = parseFloat(document.getElementById('deduction_sss').value) || 0;
-    const philhealth = parseFloat(document.getElementById('deduction_philhealth').value) || 0;
-    const pagibig = parseFloat(document.getElementById('deduction_pagibig').value) || 0;
-    const tax = parseFloat(document.getElementById('deduction_tax').value) || 0;
-    const sss_loan = parseFloat(document.getElementById('deduction_sss_loan').value) || 0;
-    const pagibig_loan = parseFloat(document.getElementById('deduction_pagibig_loan').value) || 0;
-    const salary_loan = parseFloat(document.getElementById('deduction_salary_loan').value) || 0;
+    let total = 0;
     
-    const total = sss + philhealth + pagibig + tax + sss_loan + pagibig_loan + salary_loan;
+    // Dynamically sum all deduction inputs
+    deductionTypes.forEach(deduction => {
+        const code = deduction.code.toLowerCase();
+        const deductionKey = code.replace(/_/g, '_');
+        const checkbox = document.getElementById(`deduct_${deductionKey}`);
+        const input = document.getElementById(`deduction_${deductionKey}`);
+        
+        if (checkbox && checkbox.checked && input) {
+            total += parseFloat(input.value) || 0;
+        }
+    });
     
     document.getElementById('modalTotalDeductions').textContent = '₱' + total.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
@@ -500,16 +506,23 @@ function saveDeductions() {
     
     const empData = window.employeeData[currentEmployeeId];
     
-    // Update deductions in employee data
-    empData.deductions = {
-        sss: parseFloat(document.getElementById('deduction_sss').value) || 0,
-        philhealth: parseFloat(document.getElementById('deduction_philhealth').value) || 0,
-        pagibig: parseFloat(document.getElementById('deduction_pagibig').value) || 0,
-        tax: parseFloat(document.getElementById('deduction_tax').value) || 0,
-        sss_loan: parseFloat(document.getElementById('deduction_sss_loan').value) || 0,
-        pagibig_loan: parseFloat(document.getElementById('deduction_pagibig_loan').value) || 0,
-        salary_loan: parseFloat(document.getElementById('deduction_salary_loan').value) || 0
-    };
+    // Dynamically update all deductions from database types
+    const newDeductions = {};
+    
+    deductionTypes.forEach(deduction => {
+        const code = deduction.code.toLowerCase();
+        const deductionKey = code.replace(/_/g, '_');
+        const checkbox = document.getElementById(`deduct_${deductionKey}`);
+        const input = document.getElementById(`deduction_${deductionKey}`);
+        
+        if (input) {
+            // Save value if checkbox is checked, otherwise set to 0
+            newDeductions[deductionKey] = (checkbox && checkbox.checked) ? (parseFloat(input.value) || 0) : 0;
+        }
+    });
+    
+    // Update employee deductions data
+    empData.deductions = newDeductions;
     
     // Recalculate row
     calculateRow(currentEmployeeId);

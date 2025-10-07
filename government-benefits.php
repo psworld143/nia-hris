@@ -25,16 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         switch ($_POST['action']) {
             case 'update_benefits':
                 $employee_id = intval($_POST['employee_id']);
-                $person_type = $_POST['person_type']; // 'employee' or 'faculty'
+                $person_type = $_POST['person_type'];
                 $sss_number = $_POST['sss_number'];
                 $hdmf_number = $_POST['hdmf_number'];
                 $bir_tin = $_POST['bir_tin'];
                 $phic_number = $_POST['phic_number'];
                 
-                // Determine which table to update
-                $table_name = ($person_type === 'faculty') ? 'faculty' : 'employees';
-                
-                $query = "UPDATE $table_name SET 
+                // Update ID numbers in employees table
+                $query = "UPDATE employees SET 
                          sss_number = ?, 
                          pagibig_number = ?, 
                          tin_number = ?, 
@@ -42,19 +40,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          WHERE id = ?";
                 $stmt = mysqli_prepare($conn, $query);
                 mysqli_stmt_bind_param($stmt, "ssssi", $sss_number, $hdmf_number, $bir_tin, $phic_number, $employee_id);
+                mysqli_stmt_execute($stmt);
                 
-                if (mysqli_stmt_execute($stmt)) {
-                    $person_label = ($person_type === 'faculty') ? 'Faculty member' : 'Employee';
-                    $success_message = "$person_label government benefits updated successfully!";
+                // Save benefit configuration
+                $sss_type = $_POST['sss_type'];
+                $sss_fixed = floatval($_POST['sss_fixed'] ?? 0);
+                $sss_percentage = floatval($_POST['sss_percentage'] ?? 0);
+                
+                $philhealth_type = $_POST['philhealth_type'];
+                $philhealth_fixed = floatval($_POST['philhealth_fixed'] ?? 0);
+                $philhealth_percentage = floatval($_POST['philhealth_percentage'] ?? 0);
+                
+                $pagibig_type = $_POST['pagibig_type'];
+                $pagibig_fixed = floatval($_POST['pagibig_fixed'] ?? 0);
+                $pagibig_percentage = floatval($_POST['pagibig_percentage'] ?? 0);
+                
+                $tax_type = $_POST['tax_type'];
+                $tax_fixed = floatval($_POST['tax_fixed'] ?? 0);
+                $tax_percentage = floatval($_POST['tax_percentage'] ?? 0);
+                
+                $config_query = "INSERT INTO employee_benefit_configurations (
+                                    employee_id,
+                                    sss_deduction_type, sss_fixed_amount, sss_percentage,
+                                    philhealth_deduction_type, philhealth_fixed_amount, philhealth_percentage,
+                                    pagibig_deduction_type, pagibig_fixed_amount, pagibig_percentage,
+                                    tax_deduction_type, tax_fixed_amount, tax_percentage
+                                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                 ON DUPLICATE KEY UPDATE
+                                    sss_deduction_type = VALUES(sss_deduction_type),
+                                    sss_fixed_amount = VALUES(sss_fixed_amount),
+                                    sss_percentage = VALUES(sss_percentage),
+                                    philhealth_deduction_type = VALUES(philhealth_deduction_type),
+                                    philhealth_fixed_amount = VALUES(philhealth_fixed_amount),
+                                    philhealth_percentage = VALUES(philhealth_percentage),
+                                    pagibig_deduction_type = VALUES(pagibig_deduction_type),
+                                    pagibig_fixed_amount = VALUES(pagibig_fixed_amount),
+                                    pagibig_percentage = VALUES(pagibig_percentage),
+                                    tax_deduction_type = VALUES(tax_deduction_type),
+                                    tax_fixed_amount = VALUES(tax_fixed_amount),
+                                    tax_percentage = VALUES(tax_percentage)";
+                
+                $config_stmt = mysqli_prepare($conn, $config_query);
+                mysqli_stmt_bind_param($config_stmt, "isddsddsddsdd", 
+                    $employee_id,
+                    $sss_type, $sss_fixed, $sss_percentage,
+                    $philhealth_type, $philhealth_fixed, $philhealth_percentage,
+                    $pagibig_type, $pagibig_fixed, $pagibig_percentage,
+                    $tax_type, $tax_fixed, $tax_percentage
+                );
+                
+                if (mysqli_stmt_execute($config_stmt)) {
+                    $success_message = "Government benefits and deduction configuration updated successfully!";
                 } else {
-                    $error_message = "Error updating benefits: " . mysqli_error($conn);
+                    $error_message = "Error updating configuration: " . mysqli_error($conn);
                 }
                 break;
         }
     }
 }
 
-// Get employees with their government benefits
+// Get employees with their government benefits and deduction configurations
 $employees_query = "SELECT 
                     e.id, 
                     e.employee_id, 
@@ -67,8 +112,21 @@ $employees_query = "SELECT
                     e.tin_number as bir_tin,
                     e.philhealth_number as phic_number,
                     e.is_active,
-                    'employee' as type
+                    'employee' as type,
+                    ebc.sss_deduction_type,
+                    ebc.sss_fixed_amount,
+                    ebc.sss_percentage,
+                    ebc.philhealth_deduction_type,
+                    ebc.philhealth_fixed_amount,
+                    ebc.philhealth_percentage,
+                    ebc.pagibig_deduction_type,
+                    ebc.pagibig_fixed_amount,
+                    ebc.pagibig_percentage,
+                    ebc.tax_deduction_type,
+                    ebc.tax_fixed_amount,
+                    ebc.tax_percentage
                     FROM employees e 
+                    LEFT JOIN employee_benefit_configurations ebc ON e.id = ebc.employee_id
                     WHERE e.is_active = 1 
                     ORDER BY e.last_name, e.first_name";
 
@@ -101,13 +159,53 @@ include 'includes/header.php';
     <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold mb-2">Government Benefits Management</h2>
-                <p class="opacity-90">Manage employee government benefits including SSS, HDMF, BIR, and PhilHealth</p>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-id-card mr-2"></i>Government Benefits - ID Numbers
+                </h2>
+                <p class="opacity-90">Manage employee government benefit ID numbers (SSS, PhilHealth, Pag-IBIG, TIN)</p>
+                <p class="text-sm opacity-75 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    These ID numbers are used in payroll to automatically apply government deductions
+                </p>
             </div>
-            <div class="text-right">
+            <div class="flex space-x-3">
+                <a href="manage-benefit-rates.php" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-percent mr-2"></i>Contribution Rates
+                </a>
                 <button onclick="exportBenefits()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-download mr-2"></i>Export Data
+                    <i class="fas fa-download mr-2"></i>Export
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Information Notice -->
+<div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-6">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-600 text-2xl"></i>
+        </div>
+        <div class="ml-4">
+            <h3 class="text-lg font-semibold text-blue-900 mb-2">About Government Benefits & Deductions</h3>
+            <div class="text-blue-800 space-y-2 text-sm">
+                <p>
+                    <strong>This page manages:</strong> Employee government benefit ID numbers (SSS #, PhilHealth #, Pag-IBIG #, TIN)
+                </p>
+                <p>
+                    <strong>Contribution rates are managed at:</strong> 
+                    <a href="manage-benefit-rates.php" class="underline font-semibold hover:text-blue-600">
+                        Manage Contribution Rates →
+                    </a>
+                </p>
+                <p>
+                    <strong>How it works in payroll:</strong>
+                </p>
+                <ul class="list-disc ml-6 space-y-1">
+                    <li>When processing payroll, if an employee has an SSS Number → SSS deduction is auto-checked</li>
+                    <li>The deduction amount is automatically calculated based on salary and contribution rate table</li>
+                    <li>Same applies for PhilHealth, Pag-IBIG, and Withholding Tax</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -261,21 +359,45 @@ include 'includes/header.php';
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
                                         <?php echo !empty($employee['sss_number']) ? htmlspecialchars($employee['sss_number']) : '<span class="text-gray-400 italic">Not set</span>'; ?>
+                                        <?php
+                                        $sss_type = $employee['sss_deduction_type'] ?? 'auto';
+                                        $badge_color = ['auto'=>'gray', 'fixed'=>'blue', 'percentage'=>'purple', 'none'=>'red'][$sss_type];
+                                        $badge_text = ['auto'=>'Auto', 'fixed'=>'Fixed', 'percentage'=>'%', 'none'=>'None'][$sss_type];
+                                        ?>
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-<?php echo $badge_color; ?>-100 text-<?php echo $badge_color; ?>-700 font-medium"><?php echo $badge_text; ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
                                         <?php echo !empty($employee['hdmf_number']) ? htmlspecialchars($employee['hdmf_number']) : '<span class="text-gray-400 italic">Not set</span>'; ?>
+                                        <?php
+                                        $pagibig_type = $employee['pagibig_deduction_type'] ?? 'auto';
+                                        $badge_color = ['auto'=>'gray', 'fixed'=>'blue', 'percentage'=>'purple', 'none'=>'red'][$pagibig_type];
+                                        $badge_text = ['auto'=>'Auto', 'fixed'=>'Fixed', 'percentage'=>'%', 'none'=>'None'][$pagibig_type];
+                                        ?>
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-<?php echo $badge_color; ?>-100 text-<?php echo $badge_color; ?>-700 font-medium"><?php echo $badge_text; ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
                                         <?php echo !empty($employee['bir_tin']) ? htmlspecialchars($employee['bir_tin']) : '<span class="text-gray-400 italic">Not set</span>'; ?>
+                                        <?php
+                                        $tax_type = $employee['tax_deduction_type'] ?? 'auto';
+                                        $badge_color = ['auto'=>'gray', 'fixed'=>'blue', 'percentage'=>'purple', 'none'=>'red'][$tax_type];
+                                        $badge_text = ['auto'=>'Auto', 'fixed'=>'Fixed', 'percentage'=>'%', 'none'=>'None'][$tax_type];
+                                        ?>
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-<?php echo $badge_color; ?>-100 text-<?php echo $badge_color; ?>-700 font-medium"><?php echo $badge_text; ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">
                                         <?php echo !empty($employee['phic_number']) ? htmlspecialchars($employee['phic_number']) : '<span class="text-gray-400 italic">Not set</span>'; ?>
+                                        <?php
+                                        $philhealth_type = $employee['philhealth_deduction_type'] ?? 'auto';
+                                        $badge_color = ['auto'=>'gray', 'fixed'=>'blue', 'percentage'=>'purple', 'none'=>'red'][$philhealth_type];
+                                        $badge_text = ['auto'=>'Auto', 'fixed'=>'Fixed', 'percentage'=>'%', 'none'=>'None'][$philhealth_type];
+                                        ?>
+                                        <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-<?php echo $badge_color; ?>-100 text-<?php echo $badge_color; ?>-700 font-medium"><?php echo $badge_text; ?></span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -361,33 +483,150 @@ include 'includes/header.php';
                     <!-- Employee info will be populated here -->
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">SSS Number</label>
-                        <input type="text" name="sss_number" id="sss_number"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="xx-xxxxxxx-x">
+                <!-- Government ID Numbers -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Government ID Numbers</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SSS Number</label>
+                            <input type="text" name="sss_number" id="sss_number"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="xx-xxxxxxx-x">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">PhilHealth Number</label>
+                            <input type="text" name="phic_number" id="phic_number"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="xxxx-xxxx-xxxx">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">HDMF (Pag-IBIG) Number</label>
+                            <input type="text" name="hdmf_number" id="hdmf_number"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="xxxx-xxxx-xxxx">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">BIR TIN</label>
+                            <input type="text" name="bir_tin" id="bir_tin"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="xxx-xxx-xxx-xxx">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deduction Configuration -->
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-3">
+                        <i class="fas fa-calculator mr-2"></i>Payroll Deduction Configuration
+                    </h4>
+                    <p class="text-xs text-blue-700 mb-4">Configure how government deductions are calculated in payroll</p>
+                    
+                    <!-- SSS Deduction Config -->
+                    <div class="mb-4 bg-white p-3 rounded border border-blue-200">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">SSS Deduction</label>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="sss_type" value="auto" checked class="mr-2">
+                                Auto (from table)
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="sss_type" value="fixed" class="mr-2">
+                                Fixed Amount
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="sss_type" value="percentage" class="mr-2">
+                                Percentage
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="sss_fixed" id="sss_fixed" placeholder="Fixed amount" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                            <input type="number" name="sss_percentage" id="sss_percentage" placeholder="Percentage %" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                        </div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">HDMF (Pag-IBIG) Number</label>
-                        <input type="text" name="hdmf_number" id="hdmf_number"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="xxxx-xxxx-xxxx">
+                    <!-- PhilHealth Deduction Config -->
+                    <div class="mb-4 bg-white p-3 rounded border border-blue-200">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">PhilHealth Deduction</label>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="philhealth_type" value="auto" checked class="mr-2">
+                                Auto
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="philhealth_type" value="fixed" class="mr-2">
+                                Fixed
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="philhealth_type" value="percentage" class="mr-2">
+                                Percentage
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="philhealth_fixed" id="philhealth_fixed" placeholder="Fixed amount" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                            <input type="number" name="philhealth_percentage" id="philhealth_percentage" placeholder="Percentage %" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                        </div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">BIR TIN</label>
-                        <input type="text" name="bir_tin" id="bir_tin"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="xxx-xxx-xxx-xxx">
+                    <!-- Pag-IBIG Deduction Config -->
+                    <div class="mb-4 bg-white p-3 rounded border border-blue-200">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Pag-IBIG Deduction</label>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="pagibig_type" value="auto" checked class="mr-2">
+                                Auto
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="pagibig_type" value="fixed" class="mr-2">
+                                Fixed
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="pagibig_type" value="percentage" class="mr-2">
+                                Percentage
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="pagibig_fixed" id="pagibig_fixed" placeholder="Fixed amount" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                            <input type="number" name="pagibig_percentage" id="pagibig_percentage" placeholder="Percentage %" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                        </div>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">PhilHealth Number</label>
-                        <input type="text" name="phic_number" id="phic_number"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               placeholder="xxxx-xxxx-xxxx">
+                    <!-- Tax Deduction Config -->
+                    <div class="mb-4 bg-white p-3 rounded border border-blue-200">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Withholding Tax</label>
+                        <div class="grid grid-cols-3 gap-2 mb-2">
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="tax_type" value="auto" checked class="mr-2">
+                                Auto
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="tax_type" value="fixed" class="mr-2">
+                                Fixed
+                            </label>
+                            <label class="flex items-center text-sm">
+                                <input type="radio" name="tax_type" value="percentage" class="mr-2">
+                                Percentage
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="tax_fixed" id="tax_fixed" placeholder="Fixed amount" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                            <input type="number" name="tax_percentage" id="tax_percentage" placeholder="Percentage %" step="0.01" 
+                                   class="px-3 py-2 border rounded text-sm">
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-blue-700">
+                        <strong>Note:</strong> "Auto" uses rates from the contribution rate table based on employee salary. 
+                        "Fixed" and "Percentage" override automatic calculation.
                     </div>
                 </div>
                 
@@ -416,6 +655,31 @@ function editBenefits(person) {
     document.getElementById('hdmf_number').value = person.hdmf_number || '';
     document.getElementById('bir_tin').value = person.bir_tin || '';
     document.getElementById('phic_number').value = person.phic_number || '';
+    
+    // Populate benefit configuration
+    // SSS
+    const sssType = person.sss_deduction_type || 'auto';
+    document.querySelector(`input[name="sss_type"][value="${sssType}"]`).checked = true;
+    document.getElementById('sss_fixed').value = person.sss_fixed_amount || '';
+    document.getElementById('sss_percentage').value = person.sss_percentage || '';
+    
+    // PhilHealth
+    const philhealthType = person.philhealth_deduction_type || 'auto';
+    document.querySelector(`input[name="philhealth_type"][value="${philhealthType}"]`).checked = true;
+    document.getElementById('philhealth_fixed').value = person.philhealth_fixed_amount || '';
+    document.getElementById('philhealth_percentage').value = person.philhealth_percentage || '';
+    
+    // Pag-IBIG
+    const pagibigType = person.pagibig_deduction_type || 'auto';
+    document.querySelector(`input[name="pagibig_type"][value="${pagibigType}"]`).checked = true;
+    document.getElementById('pagibig_fixed').value = person.pagibig_fixed_amount || '';
+    document.getElementById('pagibig_percentage').value = person.pagibig_percentage || '';
+    
+    // Tax
+    const taxType = person.tax_deduction_type || 'auto';
+    document.querySelector(`input[name="tax_type"][value="${taxType}"]`).checked = true;
+    document.getElementById('tax_fixed').value = person.tax_fixed_amount || '';
+    document.getElementById('tax_percentage').value = person.tax_percentage || '';
     
     // Determine colors based on type
     const bgColor = person.type === 'faculty' ? 'from-green-500 to-green-600' : 'from-green-500 to-green-600';

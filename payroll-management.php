@@ -207,6 +207,9 @@ include 'includes/header.php';
             <p class="text-gray-600">Manage payroll periods, hours, deductions, and generate payslips</p>
         </div>
         <div class="flex space-x-3">
+            <a href="manage-payroll-deductions.php" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transform transition-all hover:scale-105 font-medium">
+                <i class="fas fa-cog mr-2"></i>Manage Deductions
+            </a>
             <a href="payroll-reports.php" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transform transition-all hover:scale-105 font-medium">
                 <i class="fas fa-chart-bar mr-2"></i>Reports
             </a>
