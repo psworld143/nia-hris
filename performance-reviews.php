@@ -1,0 +1,557 @@
+<?php
+session_start();
+require_once 'config/database.php';
+require_once 'includes/functions.php';
+require_once 'includes/id_encryption.php';
+
+// Check if user is logged in and has appropriate role
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+    header('Location: index.php');
+    exit();
+}
+
+// Set page title
+$page_title = 'Performance Reviews';
+
+$message = '';
+$message_type = '';
+
+// Check for session messages
+if (isset($_SESSION['message'])) {
+    $message = $_SESSION['message'];
+    $message_type = $_SESSION['message_type'];
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+}
+
+// Get current user info
+$user_id = $_SESSION['user_id'];
+$username = $_SESSION['username'];
+
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        switch ($_POST['action']) {
+            case 'create_review':
+                // Handle new review creation
+                $employee_id = (int)$_POST['employee_id'];
+                $review_type = sanitize_input($_POST['review_type']);
+                $review_period_start = $_POST['review_period_start'];
+                $review_period_end = $_POST['review_period_end'];
+                
+                if (!empty($employee_id) && !empty($review_type) && !empty($review_period_start) && !empty($review_period_end)) {
+                    // Create new performance review
+                    $insert_query = "INSERT INTO performance_reviews (
+                        employee_id, employee_type, reviewer_id, review_period_start, review_period_end, 
+                        review_type, status, created_at
+                    ) VALUES (?, 'employee', ?, ?, ?, ?, 'draft', NOW())";
+                    
+                    $stmt = mysqli_prepare($conn, $insert_query);
+                    mysqli_stmt_bind_param($stmt, "iisss", $employee_id, $user_id, $review_period_start, $review_period_end, $review_type);
+                    
+                    if (mysqli_stmt_execute($stmt)) {
+                        $review_id = mysqli_insert_id($conn);
+                        $_SESSION['message'] = 'Performance review created successfully.';
+                        $_SESSION['message_type'] = 'success';
+                        header('Location: conduct-performance-review.php?id=' . safe_encrypt_id($review_id));
+                        exit();
+                    } else {
+                        $message = 'Error creating performance review: ' . mysqli_error($conn);
+                        $message_type = 'error';
+                    }
+                } else {
+                    $message = 'All fields are required.';
+                    $message_type = 'error';
+                }
+                break;
+                
+            case 'delete_review':
+                $review_id = (int)$_POST['review_id'];
+                if ($review_id > 0) {
+                    $delete_query = "DELETE FROM performance_reviews WHERE id = ? AND reviewer_id = ? AND status = 'draft'";
+                    $stmt = mysqli_prepare($conn, $delete_query);
+                    mysqli_stmt_bind_param($stmt, "ii", $review_id, $user_id);
+                    
+                    if (mysqli_stmt_execute($stmt)) {
+                        $_SESSION['message'] = 'Performance review deleted successfully.';
+                        $_SESSION['message_type'] = 'success';
+                    } else {
+                        $message = 'Error deleting performance review.';
+                        $message_type = 'error';
+                    }
+                }
+                break;
+        }
+    }
+}
+
+// Get filter parameters
+$filter_status = $_GET['status'] ?? '';
+$filter_type = $_GET['type'] ?? '';
+$filter_department = $_GET['department'] ?? '';
+$search_query = $_GET['search'] ?? '';
+
+// Build query for performance reviews
+$where_conditions = [];
+$params = [];
+$param_types = '';
+
+// Base query
+$query = "SELECT 
+    pr.id,
+    pr.employee_id,
+    e.first_name,
+    e.last_name,
+    e.email,
+    e.department,
+    e.position,
+    pr.review_type,
+    pr.status,
+    pr.overall_rating,
+    pr.overall_percentage,
+    pr.review_period_start,
+    pr.review_period_end,
+    pr.next_review_date,
+    pr.created_at,
+    pr.updated_at,
+    u.username as reviewer_name,
+    COUNT(prs.id) as criteria_scored,
+    COUNT(prg.id) as goals_set
+FROM performance_reviews pr
+LEFT JOIN employees e ON pr.employee_id = e.id
+LEFT JOIN users u ON pr.reviewer_id = u.id
+LEFT JOIN performance_review_scores prs ON pr.id = prs.performance_review_id
+LEFT JOIN performance_review_goals prg ON pr.id = prg.performance_review_id
+WHERE 1=1";
+
+// Add filters
+if (!empty($filter_status)) {
+    $where_conditions[] = "pr.status = ?";
+    $params[] = $filter_status;
+    $param_types .= 's';
+}
+
+if (!empty($filter_type)) {
+    $where_conditions[] = "pr.review_type = ?";
+    $params[] = $filter_type;
+    $param_types .= 's';
+}
+
+if (!empty($filter_department)) {
+    $where_conditions[] = "e.department = ?";
+    $params[] = $filter_department;
+    $param_types .= 's';
+}
+
+if (!empty($search_query)) {
+    $where_conditions[] = "(e.first_name LIKE ? OR e.last_name LIKE ? OR e.email LIKE ? OR e.position LIKE ?)";
+    $search_param = "%$search_query%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $param_types .= 'ssss';
+}
+
+// Add where conditions
+if (!empty($where_conditions)) {
+    $query .= " AND " . implode(" AND ", $where_conditions);
+}
+
+$query .= " GROUP BY pr.id ORDER BY pr.created_at DESC";
+
+// Execute query
+if (!empty($params)) {
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, $param_types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+} else {
+    $result = mysqli_query($conn, $query);
+}
+
+$reviews = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $reviews[] = $row;
+}
+
+// Get statistics
+$stats_query = "SELECT 
+    COUNT(*) as total_reviews,
+    SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft_reviews,
+    SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_reviews,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_reviews,
+    SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved_reviews,
+    AVG(overall_rating) as avg_rating,
+    AVG(overall_percentage) as avg_percentage
+FROM performance_reviews";
+$stats_result = mysqli_query($conn, $stats_query);
+$stats = mysqli_fetch_assoc($stats_result);
+
+// Get departments for filter
+$departments_query = "SELECT DISTINCT department FROM employees WHERE is_active = 1 AND department IS NOT NULL ORDER BY department";
+$departments_result = mysqli_query($conn, $departments_query);
+$departments = [];
+while ($row = mysqli_fetch_assoc($departments_result)) {
+    $departments[] = $row['department'];
+}
+
+// Get review types
+$review_types = ['annual', 'semi_annual', 'quarterly', 'probationary', 'promotion', 'special'];
+
+// Get status options
+$status_options = ['draft', 'in_progress', 'completed', 'approved', 'rejected'];
+
+include 'includes/header.php';
+?>
+
+<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header Section -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">Performance Reviews</h1>
+                            <p class="text-gray-600 mt-2">Manage and track employee performance evaluations</p>
+                        </div>
+                        <button onclick="openCreateModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            New Review
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Reviews</p>
+                                <p class="text-3xl font-bold text-gray-900"><?php echo number_format($stats['total_reviews'] ?? 0); ?></p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">In Progress</p>
+                                <p class="text-3xl font-bold text-yellow-600"><?php echo number_format($stats['in_progress_reviews'] ?? 0); ?></p>
+                            </div>
+                            <div class="bg-yellow-100 p-3 rounded-full">
+                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Completed</p>
+                                <p class="text-3xl font-bold text-green-600"><?php echo number_format($stats['completed_reviews'] ?? 0); ?></p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Average Rating</p>
+                                <p class="text-3xl font-bold text-indigo-600"><?php echo $stats['avg_rating'] ? number_format((float)$stats['avg_rating'], 2) : 'N/A'; ?></p>
+                            </div>
+                            <div class="bg-indigo-100 p-3 rounded-full">
+                                <i class="fas fa-star text-indigo-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Display -->
+                <?php if (!empty($message)): ?>
+                <div class="mb-6 p-4 rounded-lg <?php echo $message_type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'; ?>">
+                    <?php echo htmlspecialchars($message); ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Filters Section -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+                    <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" 
+                                   placeholder="Search employees..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="">All Status</option>
+                                <?php foreach ($status_options as $status): ?>
+                                <option value="<?php echo $status; ?>" <?php echo $filter_status === $status ? 'selected' : ''; ?>>
+                                    <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
+                            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="">All Types</option>
+                                <?php foreach ($review_types as $type): ?>
+                                <option value="<?php echo $type; ?>" <?php echo $filter_type === $type ? 'selected' : ''; ?>>
+                                    <?php echo ucfirst(str_replace('_', ' ', $type)); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+                            <select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="">All Departments</option>
+                                <?php foreach ($departments as $dept): ?>
+                                <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $filter_department === $dept ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($dept); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-end gap-2">
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <a href="performance-reviews.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Reviews Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Performance Reviews</h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <?php if (empty($reviews)): ?>
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                        <i class="fas fa-clipboard-list text-4xl mb-4 text-gray-300"></i>
+                                        <p class="text-lg">No performance reviews found</p>
+                                        <p class="text-sm">Create your first performance review to get started.</p>
+                                    </td>
+                                </tr>
+                                <?php else: ?>
+                                <?php foreach ($reviews as $review): ?>
+                                <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                                    <span class="text-sm font-medium text-green-800">
+                                                        <?php echo strtoupper(substr($review['first_name'], 0, 1) . substr($review['last_name'], 0, 1)); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">
+                                                    <?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?>
+                                                </div>
+                                                <div class="text-sm text-gray-500">
+                                                    <?php echo htmlspecialchars($review['position']); ?> - <?php echo htmlspecialchars($review['department']); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <?php echo ucfirst(str_replace('_', ' ', $review['review_type'])); ?>
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <?php echo date('M j, Y', strtotime($review['review_period_start'])); ?> - 
+                                        <?php echo date('M j, Y', strtotime($review['review_period_end'])); ?>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <?php
+                                        $status_colors = [
+                                            'draft' => 'bg-gray-100 text-gray-800',
+                                            'in_progress' => 'bg-yellow-100 text-yellow-800',
+                                            'completed' => 'bg-green-100 text-green-800',
+                                            'approved' => 'bg-blue-100 text-blue-800',
+                                            'rejected' => 'bg-red-100 text-red-800'
+                                        ];
+                                        $status_color = $status_colors[$review['status']] ?? 'bg-gray-100 text-gray-800';
+                                        ?>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $status_color; ?>">
+                                            <?php echo ucfirst(str_replace('_', ' ', $review['status'])); ?>
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <?php if ($review['overall_rating']): ?>
+                                        <div class="flex items-center">
+                                            <span class="text-lg font-semibold text-indigo-600"><?php echo number_format((float)$review['overall_rating'], 1); ?></span>
+                                            <span class="text-sm text-gray-500 ml-1">/ 5.0</span>
+                                        </div>
+                                        <?php else: ?>
+                                        <span class="text-gray-400">Not rated</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                                <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo min(100, ($review['criteria_scored'] + $review['goals_set']) * 10); ?>%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-600">
+                                                <?php echo $review['criteria_scored']; ?> criteria, <?php echo $review['goals_set']; ?> goals
+                                            </span>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex items-center gap-2">
+                                            <a href="conduct-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
+                                               class="text-green-600 hover:text-green-900 transition-colors duration-200">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="view-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
+                                               class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <?php if ($review['status'] === 'draft'): ?>
+                                            <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this review?')">
+                                                <input type="hidden" name="action" value="delete_review">
+                                                <input type="hidden" name="review_id" value="<?php echo $review['id']; ?>">
+                                                <button type="submit" class="text-red-600 hover:text-red-900 transition-colors duration-200">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+<!-- Create Review Modal -->
+<div id="createModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Create New Performance Review</h3>
+                <button onclick="closeCreateModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form method="POST" class="space-y-4">
+                <input type="hidden" name="action" value="create_review">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
+                    <select name="employee_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="">Select Employee</option>
+                        <?php
+                        $employees_query = "SELECT id, first_name, last_name, email, department, position FROM employees WHERE is_active = 1 ORDER BY first_name, last_name";
+                        $employees_result = mysqli_query($conn, $employees_query);
+                        while ($employee = mysqli_fetch_assoc($employees_result)):
+                        ?>
+                        <option value="<?php echo $employee['id']; ?>">
+                            <?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name'] . ' - ' . $employee['department']); ?>
+                        </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
+                    <select name="review_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="">Select Review Type</option>
+                        <?php foreach ($review_types as $type): ?>
+                        <option value="<?php echo $type; ?>">
+                            <?php echo ucfirst(str_replace('_', ' ', $type)); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Period Start</label>
+                        <input type="date" name="review_period_start" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Period End</label>
+                        <input type="date" name="review_period_end" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeCreateModal()" 
+                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
+                        Create Review
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCreateModal() {
+    document.getElementById('createModal').classList.remove('hidden');
+}
+
+function closeCreateModal() {
+    document.getElementById('createModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCreateModal();
+    }
+});
+</script>
+

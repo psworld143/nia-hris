@@ -1,0 +1,1068 @@
+<?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+require_once 'config/database.php';
+require_once 'includes/functions.php';
+require_once 'includes/leave_allowance_calculator_v2.php';
+
+// Database connection is now enforced in config/database.php
+
+// Check if user is logged in and is HR
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+    header('Location: /seait/index.php?login=required&redirect=leave-allowance-management');
+    exit();
+}
+
+$page_title = 'Leave Allowance Management';
+
+// Initialize calculator with separate tables
+$calculator = new LeaveAllowanceCalculatorV2($conn);
+
+// Get filter parameters
+$year_filter = $_GET['year'] ?? date('Y');
+$department_filter = $_GET['department'] ?? '';
+$employee_type_filter = $_GET['employee_type'] ?? 'all';
+$status_filter = $_GET['status'] ?? 'all'; // all, regular, probationary
+$search = $_GET['search'] ?? '';
+$current_tab = $_GET['tab'] ?? 'employees';
+
+// Handle actions - REMOVED: initialize_year and recalculate_employee cases
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        $message = '';
+        $message_type = 'success';
+        
+        switch ($_POST['action']) {
+            // Only keep other actions if any exist
+            default:
+                $message = "Unknown action";
+                $message_type = 'error';
+                break;
+        }
+        
+        // Store message in session and redirect to prevent form resubmission
+        $_SESSION['message'] = $message;
+        $_SESSION['message_type'] = $message_type;
+        
+        // Build redirect URL with current filters
+        $redirect_params = [];
+        if (isset($_GET['year'])) $redirect_params['year'] = $_GET['year'];
+        if (isset($_GET['department'])) $redirect_params['department'] = $_GET['department'];
+        if (isset($_GET['employee_type'])) $redirect_params['employee_type'] = $_GET['employee_type'];
+        if (isset($_GET['status'])) $redirect_params['status'] = $_GET['status'];
+        if (isset($_GET['search'])) $redirect_params['search'] = $_GET['search'];
+        if (isset($_GET['tab'])) $redirect_params['tab'] = $_GET['tab'];
+        
+        $redirect_url = 'leave-allowance-management.php';
+        if (!empty($redirect_params)) {
+            $redirect_url .= '?' . http_build_query($redirect_params);
+        }
+        
+        header("Location: $redirect_url");
+        exit();
+    }
+}
+
+// Get departments for filter
+$departments = [];
+$employee_depts_query = "SELECT DISTINCT department FROM employees WHERE department IS NOT NULL AND department != ''";
+$employee_depts_result = mysqli_query($conn, $employee_depts_query);
+while ($row = mysqli_fetch_assoc($employee_depts_result)) {
+    $departments[] = $row['department'];
+}
+
+$faculty_depts_query = "SELECT DISTINCT department FROM employees WHERE department IS NOT NULL AND department != ''";
+$faculty_depts_result = mysqli_query($conn, $faculty_depts_query);
+while ($row = mysqli_fetch_assoc($faculty_depts_result)) {
+    $departments[] = $row['department'];
+}
+
+$departments = array_unique($departments);
+sort($departments);
+
+// Get leave balances using dynamic calculation (no database storage)
+$leave_balances = [];
+$stats = [];
+
+// Get employee data and calculate dynamically
+if ($current_tab === 'employees' || $current_tab === 'all') {
+    $employee_data_query = "SELECT e.id, e.first_name, e.last_name, e.employee_id, e.department, e.position,
+                           ed.profile_photo, ed.employment_type, ed.employment_status
+                           FROM employees e 
+                           LEFT JOIN employee_details ed ON e.id = ed.employee_id
+                           WHERE e.is_active = 1";
+    
+    // Apply filters
+    if ($department_filter) {
+        $employee_data_query .= " AND e.department = '" . mysqli_real_escape_string($conn, $department_filter) . "'";
+    }
+    if ($search) {
+        $employee_data_query .= " AND (e.first_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%' 
+                                 OR e.last_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%'
+                                 OR e.employee_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%')";
+    }
+    
+    $employee_data_query .= " ORDER BY e.last_name, e.first_name";
+    
+    $employee_result = mysqli_query($conn, $employee_data_query);
+    while ($employee_data = mysqli_fetch_assoc($employee_result)) {
+        $calculated_balance = calculateDynamicLeaveBalance($employee_data, 'employee', $year_filter);
+        
+        // Apply status filter
+        if ($status_filter === 'all' || 
+            ($status_filter === 'regular' && $calculated_balance['is_regular']) ||
+            ($status_filter === 'probationary' && !$calculated_balance['is_regular'])) {
+            $leave_balances[] = $calculated_balance;
+        }
+    }
+}
+
+// Get faculty data and calculate dynamically
+if ($current_tab === 'faculty' || $current_tab === 'all') {
+    $faculty_data_query = "SELECT f.id, e.first_name, e.last_name, e.employee_id, e.department, f.position, f.image_url,
+                          fd.employment_type, fd.employment_status
+                          FROM employees f 
+                          LEFT JOIN employee_details fd ON f.id = fd.employee_id
+                          WHERE f.is_active = 1";
+    
+    // Apply filters
+    if ($department_filter) {
+        $faculty_data_query .= " AND e.department = '" . mysqli_real_escape_string($conn, $department_filter) . "'";
+    }
+    if ($search) {
+        $faculty_data_query .= " AND (e.first_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%' 
+                                OR e.last_name LIKE '%" . mysqli_real_escape_string($conn, $search) . "%'
+                                OR e.employee_id LIKE '%" . mysqli_real_escape_string($conn, $search) . "%')";
+    }
+    
+    $faculty_data_query .= " ORDER BY e.last_name, e.first_name";
+    
+    $faculty_result = mysqli_query($conn, $faculty_data_query);
+    while ($faculty_data = mysqli_fetch_assoc($faculty_result)) {
+        $calculated_balance = calculateDynamicLeaveBalance($faculty_data, 'faculty', $year_filter);
+        
+        // Apply status filter
+        if ($status_filter === 'all' || 
+            ($status_filter === 'regular' && $calculated_balance['is_regular']) ||
+            ($status_filter === 'probationary' && !$calculated_balance['is_regular'])) {
+            $leave_balances[] = $calculated_balance;
+        }
+    }
+}
+
+// Calculate statistics from dynamic data
+$stats = [
+    'employee' => [
+        'total_employees' => 0,
+        'regular_employees' => 0,
+        'total_base_days' => 0,
+        'total_accumulated_days' => 0,
+        'total_available_days' => 0,
+        'total_used_days' => 0,
+        'total_remaining_days' => 0
+    ],
+    'faculty' => [
+        'total_employees' => 0,
+        'regular_employees' => 0,
+        'total_base_days' => 0,
+        'total_accumulated_days' => 0,
+        'total_available_days' => 0,
+        'total_used_days' => 0,
+        'total_remaining_days' => 0
+    ]
+];
+
+foreach ($leave_balances as $balance) {
+    $type = $balance['source_table'];
+    $stats[$type]['total_employees']++;
+    if ($balance['is_regular']) {
+        $stats[$type]['regular_employees']++;
+    }
+    $stats[$type]['total_base_days'] += $balance['base_days'];
+    $stats[$type]['total_accumulated_days'] += $balance['accumulated_days'];
+    $stats[$type]['total_available_days'] += $balance['total_days'];
+    $stats[$type]['total_used_days'] += $balance['used_days'];
+    $stats[$type]['total_remaining_days'] += $balance['remaining_days'];
+}
+
+// Get current year for default
+$current_year = date('Y');
+
+// Dynamic leave calculation without database storage
+echo "<script>console.log('Calculating leave allowances dynamically for year $year_filter...');</script>";
+
+function calculateDynamicLeaveBalance($employee_data, $employee_type, $year) {
+    global $conn;
+    
+    $employee_id = $employee_data['id'];
+    
+    // Base allowance: 5 days for all employees/faculty
+    $base_days = 5;
+    $accumulated_days = 0;
+    $can_accumulate = false;
+    
+    // Determine if employee is regular
+    $is_regular = false;
+    $regularization_date = null;
+    $reg_info = null;
+    
+    if ($employee_type === 'employee') {
+        // Get employee regularization info
+        $reg_query = "SELECT er.regularization_date, rs.name as status_name 
+                      FROM employee_regularization er 
+                      LEFT JOIN regularization_status rs ON er.current_status_id = rs.id 
+                      WHERE er.employee_id = ?";
+        $reg_stmt = mysqli_prepare($conn, $reg_query);
+        mysqli_stmt_bind_param($reg_stmt, 'i', $employee_id);
+        mysqli_stmt_execute($reg_stmt);
+        $reg_result = mysqli_stmt_get_result($reg_stmt);
+        $reg_info = mysqli_fetch_assoc($reg_result);
+        
+        if ($reg_info && $reg_info['regularization_date']) {
+            $regularization_date = new DateTime($reg_info['regularization_date']);
+            $current_date = new DateTime($year . '-01-01');
+            $months_since_reg = $regularization_date->diff($current_date)->m + ($regularization_date->diff($current_date)->y * 12);
+            
+            // Regular after 6 months, can accumulate immediately after regularization
+            $is_regular = $months_since_reg >= 6;
+            $can_accumulate = $is_regular;
+        }
+    } else {
+        // Faculty regularization info
+        $reg_query = "SELECT fr.regularization_date, rs.name as status_name 
+                      FROM employee_regularization fr 
+                      LEFT JOIN regularization_status rs ON fr.current_status_id = rs.id 
+                      WHERE fr.employee_id = ?";
+        $reg_stmt = mysqli_prepare($conn, $reg_query);
+        mysqli_stmt_bind_param($reg_stmt, 'i', $employee_id);
+        mysqli_stmt_execute($reg_stmt);
+        $reg_result = mysqli_stmt_get_result($reg_stmt);
+        $reg_info = mysqli_fetch_assoc($reg_result);
+        
+        if ($reg_info && $reg_info['regularization_date']) {
+            $regularization_date = new DateTime($reg_info['regularization_date']);
+            $current_date = new DateTime($year . '-01-01');
+            $months_since_reg = $regularization_date->diff($current_date)->m + ($regularization_date->diff($current_date)->y * 12);
+            
+            // Regular after 3 years, can accumulate after 3 years
+            $is_regular = $months_since_reg >= 36;
+            $can_accumulate = $is_regular && $months_since_reg >= 36;
+        }
+    }
+    
+    // Calculate accumulated leave for eligible employees using Years of Service formula
+    if ($can_accumulate) {
+        // Get regularization date (when accumulation starts)
+        $reg_date_query = $employee_type === 'employee' ? 
+            "SELECT regularization_date FROM employee_regularization WHERE employee_id = ?" :
+            "SELECT regularization_date FROM employee_regularization WHERE employee_id = ?";
+        
+        $reg_stmt = mysqli_prepare($conn, $reg_date_query);
+        mysqli_stmt_bind_param($reg_stmt, 'i', $employee_id);
+        mysqli_stmt_execute($reg_stmt);
+        $reg_result = mysqli_stmt_get_result($reg_stmt);
+        $reg_data = mysqli_fetch_assoc($reg_result);
+        
+        if ($reg_data && $reg_data['regularization_date']) {
+            $regularization_date = new DateTime($reg_data['regularization_date']);
+            $previous_year = new DateTime(($year - 1) . '-12-31');
+            
+            // Calculate Years of Service (from regularization date up to previous year, excluding current year)
+            $years_of_service = max(0, $regularization_date->diff($previous_year)->y);
+            
+            if ($years_of_service > 0) {
+                // Calculate total leave entitlement for years of service (from regularization)
+                $total_entitlement = $years_of_service * 5;
+                
+                // Get total used leave since regularization date (all approved leave from when accumulation started)
+                $used_query = $employee_type === 'employee' ? 
+                    "SELECT COALESCE(SUM(total_days), 0) as total_used
+                     FROM employee_leave_requests 
+                     WHERE employee_id = ? AND status IN ('approved_by_head', 'approved_by_hr') 
+                     AND start_date >= ?" :
+                    "SELECT COALESCE(SUM(total_days), 0) as total_used
+                     FROM employee_leave_requests 
+                     WHERE employee_id = ? AND status IN ('approved_by_head', 'approved_by_hr') 
+                     AND start_date >= ?";
+                
+                $used_stmt = mysqli_prepare($conn, $used_query);
+                mysqli_stmt_bind_param($used_stmt, 'is', $employee_id, $reg_data['regularization_date']);
+                mysqli_stmt_execute($used_stmt);
+                $used_result = mysqli_stmt_get_result($used_stmt);
+                $used_data = mysqli_fetch_assoc($used_result);
+                $total_used_since_regularization = $used_data['total_used'] ?? 0;
+                
+                // Accumulated Leave = (Years of Service × 5) - All Approved Leave Since Regularization
+                $accumulated_days = max(0, $total_entitlement - $total_used_since_regularization);
+                
+                // Cap accumulated leave at reasonable limit (e.g., 50 days)
+                $accumulated_days = min(50, $accumulated_days);
+            }
+        }
+    }
+    
+    // Get used days for current year (only fully approved)
+    $used_query = $employee_type === 'employee' ? 
+        "SELECT COALESCE(SUM(total_days), 0) as used_days
+         FROM employee_leave_requests 
+         WHERE employee_id = ? AND YEAR(start_date) = ? 
+         AND status = 'approved_by_hr'" :
+        "SELECT COALESCE(SUM(total_days), 0) as used_days
+         FROM employee_leave_requests 
+         WHERE employee_id = ? AND YEAR(start_date) = ? 
+         AND status = 'approved_by_hr'";
+    
+    $used_stmt = mysqli_prepare($conn, $used_query);
+    mysqli_stmt_bind_param($used_stmt, 'ii', $employee_id, $year);
+    mysqli_stmt_execute($used_stmt);
+    $used_result = mysqli_stmt_get_result($used_stmt);
+    $used_data = mysqli_fetch_assoc($used_result);
+    $used_days = $used_data['used_days'] ?? 0;
+    
+    // Get approved leave days from previous year (only fully approved)
+    $previous_year = $year - 1;
+    $prev_year_query = $employee_type === 'employee' ? 
+        "SELECT COALESCE(SUM(total_days), 0) as approved_days
+         FROM employee_leave_requests 
+         WHERE employee_id = ? AND YEAR(start_date) = ? 
+         AND status = 'approved_by_hr'" :
+        "SELECT COALESCE(SUM(total_days), 0) as approved_days
+         FROM employee_leave_requests 
+         WHERE employee_id = ? AND YEAR(start_date) = ? 
+         AND status = 'approved_by_hr'";
+    
+    $prev_stmt = mysqli_prepare($conn, $prev_year_query);
+    mysqli_stmt_bind_param($prev_stmt, 'ii', $employee_id, $previous_year);
+    mysqli_stmt_execute($prev_stmt);
+    $prev_result = mysqli_stmt_get_result($prev_stmt);
+    $prev_data = mysqli_fetch_assoc($prev_result);
+    $previous_year_approved = $prev_data['approved_days'] ?? 0;
+    
+    // Calculate Years of Service (from hire date to current year)
+    $years_of_service = 0;
+    $months_of_service = 0;
+    $service_display = "0 years";
+    $actual_hire_date = null;
+    
+    // Try to get hire date from regularization table first
+    $hire_date_query = $employee_type === 'employee' ? 
+        "SELECT date_of_hire FROM employee_regularization WHERE employee_id = ?" :
+        "SELECT date_of_hire FROM employee_regularization WHERE employee_id = ?";
+    
+    $hire_stmt = mysqli_prepare($conn, $hire_date_query);
+    mysqli_stmt_bind_param($hire_stmt, 'i', $employee_id);
+    mysqli_stmt_execute($hire_stmt);
+    $hire_result = mysqli_stmt_get_result($hire_stmt);
+    $hire_data = mysqli_fetch_assoc($hire_result);
+    
+    if ($hire_data && $hire_data['date_of_hire']) {
+        $actual_hire_date = $hire_data['date_of_hire'];
+    } else {
+        // Fallback: Use created_at date from main table
+        $fallback_query = $employee_type === 'employee' ? 
+            "SELECT created_at FROM employees WHERE id = ?" :
+            "SELECT created_at FROM employees WHERE id = ?";
+        
+        $fallback_stmt = mysqli_prepare($conn, $fallback_query);
+        mysqli_stmt_bind_param($fallback_stmt, 'i', $employee_id);
+        mysqli_stmt_execute($fallback_stmt);
+        $fallback_result = mysqli_stmt_get_result($fallback_stmt);
+        $fallback_data = mysqli_fetch_assoc($fallback_result);
+        
+        if ($fallback_data && $fallback_data['created_at']) {
+            $actual_hire_date = date('Y-m-d', strtotime($fallback_data['created_at']));
+        }
+    }
+    
+    if ($actual_hire_date) {
+        $hire_date = new DateTime($actual_hire_date);
+        $current_date = new DateTime();
+        $interval = $hire_date->diff($current_date);
+        
+        $years_of_service = $interval->y;
+        $months_of_service = $interval->m;
+        
+        if ($years_of_service > 0) {
+            $service_display = $years_of_service . ' year' . ($years_of_service != 1 ? 's' : '');
+        } else {
+            $service_display = $months_of_service . ' month' . ($months_of_service != 1 ? 's' : '');
+        }
+    } else {
+        // No hire date available
+        $service_display = "No hire date";
+    }
+    
+    // Calculate final values
+    $remaining_base = max(0, $base_days - $used_days);
+    $total_days = $base_days + $accumulated_days;
+    $remaining_days = max(0, $total_days - $used_days);
+    
+    return [
+        'employee_id' => $employee_id,
+        'first_name' => $employee_data['first_name'],
+        'last_name' => $employee_data['last_name'],
+        'emp_id' => $service_display, // Show Years/Months of Service instead of ID
+        'department' => $employee_data['department'],
+        'position' => $employee_data['position'],
+        'employment_status' => $employee_data['employment_status'] ?? null,
+        'employment_type' => $employee_data['employment_type'] ?? null,
+        'regularization_status_name' => $reg_info['status_name'] ?? null,
+        'profile_photo' => $employee_data['profile_photo'] ?? null,
+        'image_url' => $employee_data['image_url'] ?? null,
+        'base_days' => $remaining_base, // Keep as remaining base for "Remaining Base" column
+        'accumulated_days' => $accumulated_days,
+        'total_days' => $total_days,
+        'used_days' => $used_days,
+        'remaining_days' => $remaining_days,
+        'previous_year_approved' => $previous_year_approved,
+        'is_regular' => $is_regular,
+        'can_accumulate' => $can_accumulate,
+        'regularization_date' => $regularization_date,
+        'accumulation_start_year' => $can_accumulate ? ($is_regular ? $regularization_date->format('Y') : null) : null,
+        'source_table' => $employee_type,
+        'leave_types' => 'All Types', // Simplified
+        'years_of_service' => $years_of_service
+    ];
+}
+
+include 'includes/header.php';
+?>
+
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Leave Allowance Management</h1>
+            <p class="text-gray-600">Track and manage leave allowances for admin staff and faculty</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="leave-management.php" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                <i class="fas fa-calendar-alt"></i>
+                Leave Requests
+            </a>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <?php if (isset($_SESSION['message'])): ?>
+        <div class="mb-6">
+            <?php if ($_SESSION['message_type'] === 'success'): ?>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($_SESSION['message_type'] === 'warning'): ?>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-yellow-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($_SESSION['message_type'] === 'error'): ?>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-times-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-red-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php 
+        // Clear the message after displaying it
+        unset($_SESSION['message']);
+        unset($_SESSION['message_type']);
+        ?>
+    <?php endif; ?>
+
+    <!-- Leave Allowance Rules Info -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+        <h3 class="text-lg font-semibold text-blue-900 mb-3">
+            <i class="fas fa-info-circle mr-2"></i>Leave Allowance Rules
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <h4 class="font-semibold text-blue-800 mb-2">Admin Employees:</h4>
+                <ul class="space-y-1 text-blue-700">
+                    <li>• 5 days leave with pay regardless of employment status</li>
+                    <li>• Entitled for regularization after 6 months</li>
+                    <li>• Regular employees: unused leave carries over to next year</li>
+                    <li>• Non-regular employees: leave resets every year</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold text-blue-800 mb-2">Faculty:</h4>
+                <ul class="space-y-1 text-blue-700">
+                    <li>• 5 days leave with pay regardless of employment status</li>
+                    <li>• Entitled for regularization after 3 years</li>
+                    <li>• Can only enjoy accumulated leave after 3 years (regularization)</li>
+                    <li>• Non-regular faculty: leave resets every year</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                    <i class="fas fa-users text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Employees</p>
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['employee']['total_employees'] ?? 0; ?></p>
+                </div>
+            </div>
+            <div class="mt-4 text-xs">
+                <div class="text-green-600">Regular Employees: <?php echo $stats['employee']['regular_employees'] ?? 0; ?></div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                    <i class="fas fa-chalkboard-teacher text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Faculty</p>
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['faculty']['total_employees'] ?? 0; ?></p>
+                </div>
+            </div>
+            <div class="mt-4 text-xs">
+                <div class="text-green-600">Regular Faculty: <?php echo $stats['faculty']['regular_employees'] ?? 0; ?></div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-calendar-check text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Available Days</p>
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format(($stats['employee']['total_available_days'] ?? 0) + ($stats['faculty']['total_available_days'] ?? 0)); ?></p>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <div class="text-blue-600">Base: <?php echo number_format(($stats['employee']['total_base_days'] ?? 0) + ($stats['faculty']['total_base_days'] ?? 0)); ?></div>
+                <div class="text-purple-600">Accumulated: <?php echo number_format(($stats['employee']['total_accumulated_days'] ?? 0) + ($stats['faculty']['total_accumulated_days'] ?? 0)); ?></div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                    <i class="fas fa-clock text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Remaining Days</p>
+                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format(($stats['employee']['total_remaining_days'] ?? 0) + ($stats['faculty']['total_remaining_days'] ?? 0)); ?></p>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                <div class="text-red-600">Used: <?php echo number_format(($stats['employee']['total_used_days'] ?? 0) + ($stats['faculty']['total_used_days'] ?? 0)); ?></div>
+                <div class="text-gray-600">Year: <?php echo $year_filter; ?></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <!-- Leave Allowance Management - Employee System -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200 pb-2">
+            <h2 class="text-lg font-semibold text-gray-800">
+                <i class="fas fa-calendar-check text-green-600 mr-2"></i>Employee Leave Allowances
+                <span class="ml-3 bg-gray-100 text-gray-900 py-1 px-3 rounded-full text-sm font-medium"><?php echo $stats['employee']['total_employees'] ?? 0; ?> Employees</span>
+            </h2>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Filters</h3>
+        </div>
+        <div class="p-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <input type="hidden" name="tab" value="<?php echo htmlspecialchars($current_tab); ?>">
+                
+                <div>
+                    <label for="year-filter" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <select name="year" id="year-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <?php for ($year = $current_year + 2; $year >= $current_year - 2; $year--): ?>
+                            <option value="<?php echo $year; ?>" <?php echo $year_filter == $year ? 'selected' : ''; ?>>
+                                <?php echo $year; ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select name="department" id="department-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="">All Departments</option>
+                        <?php foreach ($departments as $dept): ?>
+                            <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" id="status-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                        <option value="regular" <?php echo $status_filter === 'regular' ? 'selected' : ''; ?>>Regular</option>
+                        <option value="probationary" <?php echo $status_filter === 'probationary' ? 'selected' : ''; ?>>Probationary</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name, ID..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                </div>
+                
+                <div class="flex items-end space-x-2">
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex-1">
+                        <i class="fas fa-search mr-2"></i>Filter
+                    </button>
+                    <a href="leave-allowance-management.php?tab=<?php echo htmlspecialchars($current_tab); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Leave Allowances Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <?php 
+            // Calculate unique employee/faculty count
+            $unique_people = [];
+            foreach ($leave_balances as $balance) {
+                $unique_people[$balance['employee_id']] = true;
+            }
+            $people_count = count($unique_people);
+            
+            // Determine the correct label
+            if ($current_tab === 'employees') {
+                $count_label = $people_count . ' employee' . ($people_count != 1 ? 's' : '');
+            } elseif ($current_tab === 'faculty') {
+                $count_label = $people_count . ' faculty member' . ($people_count != 1 ? 's' : '');
+            } else {
+                $count_label = $people_count . ' people';
+            }
+            ?>
+            <h3 class="text-lg font-medium text-gray-900">Leave Allowances - <?php echo ucfirst($current_tab); ?> (<?php echo $count_label; ?>)</h3>
+        </div>
+        
+        <!-- Desktop Table View -->
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Employee</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Status</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Remaining Base</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Accumulated</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Days</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Used</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Remaining</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Previous Year Approved</th>
+                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Leave Types & Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <?php if (empty($leave_balances)): ?>
+                    <tr>
+                        <td colspan="9" class="px-4 py-4 text-center text-gray-500">No leave allowance data found.</td>
+                    </tr>
+                    <?php else: ?>
+                        <?php foreach ($leave_balances as $balance): ?>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-8 w-8">
+                                        <?php 
+                                        $photo_field = ($balance['source_table'] === 'employee') ? 'profile_photo' : 'image_url';
+                                        $photo_path = $balance[$photo_field] ?? '';
+                                        $full_photo_path = '';
+                                        if (!empty($photo_path)) {
+                                            $full_photo_path = $_SERVER['DOCUMENT_ROOT'] . '/seait/' . $photo_path;
+                                        }
+                                        ?>
+                                        <?php if (!empty($photo_path) && file_exists($full_photo_path)): ?>
+                                            <div class="h-8 w-8 rounded-full overflow-hidden border-2 border-gray-200 hover:border-green-500 transition-colors">
+                                                <img src="../<?php echo htmlspecialchars($photo_path); ?>" 
+                                                     alt="<?php echo htmlspecialchars(($balance['first_name'] ?? '') . ' ' . ($balance['last_name'] ?? '')); ?>" 
+                                                     class="w-full h-full object-cover">
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white font-semibold text-sm shadow-lg">
+                                                <?php echo strtoupper(substr($balance['first_name'] ?? '', 0, 1) . substr($balance['last_name'] ?? '', 0, 1)); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($balance['first_name'] ?? '') . ' ' . ($balance['last_name'] ?? '')); ?></div>
+                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars($balance['emp_id'] ?? ''); ?></div>
+                                        <div class="text-xs text-gray-400"><?php echo htmlspecialchars($balance['department'] ?? ''); ?></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex flex-col space-y-1">
+                                    <?php 
+                                    $employment_display = '';
+                                    $status_class = 'bg-gray-100 text-gray-800';
+                                    
+                                    if ($balance['employment_status'] && $balance['employment_type']) {
+                                        // Format as "Full-time Regular" instead of "Full Time Regular"
+                                        $status = str_replace(' ', '-', strtolower($balance['employment_status']));
+                                        $employment_display = ucfirst($status) . ' ' . $balance['employment_type'];
+                                    } else if ($balance['employment_type']) {
+                                        $employment_display = $balance['employment_type'];
+                                    } else if ($balance['regularization_status_name']) {
+                                        $employment_display = $balance['regularization_status_name'];
+                                    } else {
+                                        $employment_display = $balance['is_regular'] ? 'Regular' : 'Probationary';
+                                    }
+                                    
+                                    // Set color based on employment type
+                                    if (strpos($employment_display, 'Regular') !== false) {
+                                        $status_class = 'bg-green-500 text-white border border-green-600';
+                                    } else if (strpos($employment_display, 'Probationary') !== false) {
+                                        $status_class = 'bg-blue-100 text-blue-800 border border-blue-200';
+                                    } else if (strpos($employment_display, 'Contractual') !== false) {
+                                        $status_class = 'bg-orange-100 text-orange-800 border border-orange-200';
+                                    } else if (strpos($employment_display, 'Part Time') !== false) {
+                                        $status_class = 'bg-purple-100 text-purple-800 border border-purple-200';
+                                    } else if (strpos($employment_display, 'Visiting') !== false) {
+                                        $status_class = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                                    }
+                                    ?>
+                                    <span class="inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-medium text-center <?php echo $status_class; ?>">
+                                        <?php echo htmlspecialchars($employment_display); ?>
+                                    </span>
+                                </div>
+                            </td>
+                            <?php 
+                            // Check if this is a Full-time Probationary employee
+                            $is_fulltime_probationary = (strpos(strtolower($employment_display), 'full-time') !== false && 
+                                                        strpos(strtolower($employment_display), 'probationary') !== false);
+                            
+                            if ($is_fulltime_probationary): ?>
+                                <!-- Pill format for Full-time Probationary -->
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-blue-100 text-blue-800">
+                                        <?php echo $balance['base_days']; ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-gray-100 text-gray-600">
+                                        N/A
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-100 text-green-800">
+                                        <?php echo $balance['total_days']; ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-red-100 text-red-800">
+                                        <?php echo $balance['used_days']; ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-emerald-100 text-emerald-800">
+                                        <?php echo $balance['remaining_days']; ?>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-indigo-100 text-indigo-800">
+                                        <?php echo $balance['previous_year_approved']; ?>
+                                    </span>
+                                </td>
+                            <?php else: ?>
+                                <!-- Regular format for other employees -->
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-blue-100 text-blue-800 border border-blue-200">
+                                    <?php echo $balance['base_days']; ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-100 text-green-800 border border-green-200">
+                                    <?php 
+                                    // For faculty, only show accumulated days if they are regular
+                                    if ($balance['source_table'] === 'faculty') {
+                                        echo $balance['is_regular'] ? $balance['accumulated_days'] : '<span class="text-gray-400 italic">N/A</span>';
+                                    } else {
+                                        // For employees, show accumulated days normally
+                                        echo $balance['accumulated_days'];
+                                    }
+                                    ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-500 text-white border border-green-600">
+                                    <?php echo $balance['total_days']; ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-red-100 text-red-800 border border-red-200">
+                                    <?php echo $balance['used_days']; ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-sm font-medium <?php echo $balance['remaining_days'] > 0 ? 'text-green-600' : 'text-red-600'; ?>">
+                                <?php echo $balance['remaining_days']; ?>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-gray-900">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    <?php echo $balance['previous_year_approved']; ?>
+                                </span>
+                            </td>
+                            <?php endif; ?>
+                            <td class="px-4 py-4 text-sm font-medium">
+                                <div class="flex flex-col space-y-1">
+                                    <div class="text-xs text-gray-500">
+                                        <?php echo htmlspecialchars($balance['leave_types']); ?>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="lg:hidden">
+            <?php if (empty($leave_balances)): ?>
+            <div class="p-6 text-center text-gray-500">No leave allowance data found.</div>
+            <?php else: ?>
+                <?php foreach ($leave_balances as $balance): ?>
+                <div class="p-4 border-b border-gray-200 hover:bg-gray-50">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <?php 
+                                $photo_field = ($balance['source_table'] === 'employee') ? 'profile_photo' : 'image_url';
+                                $photo_path = $balance[$photo_field] ?? '';
+                                $full_photo_path = '';
+                                if (!empty($photo_path)) {
+                                    $full_photo_path = $_SERVER['DOCUMENT_ROOT'] . '/seait/' . $photo_path;
+                                }
+                                ?>
+                                <?php if (!empty($photo_path) && file_exists($full_photo_path)): ?>
+                                    <div class="h-10 w-10 rounded-full overflow-hidden border-2 border-gray-200 hover:border-green-500 transition-colors">
+                                        <img src="../<?php echo htmlspecialchars($photo_path); ?>" 
+                                             alt="<?php echo htmlspecialchars(($balance['first_name'] ?? '') . ' ' . ($balance['last_name'] ?? '')); ?>" 
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                <?php else: ?>
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white font-semibold shadow-lg">
+                                        <?php echo strtoupper(substr($balance['first_name'] ?? '', 0, 1) . substr($balance['last_name'] ?? '', 0, 1)); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="ml-3">
+                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($balance['first_name'] ?? '') . ' ' . ($balance['last_name'] ?? '')); ?></div>
+                                <div class="text-sm text-gray-500"><?php echo htmlspecialchars($balance['emp_id'] ?? ''); ?></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <?php 
+                            $employment_display = '';
+                            $status_class = 'bg-gray-100 text-gray-800';
+                            
+                            if ($balance['employment_status'] && $balance['employment_type']) {
+                                // Format as "Full-time Regular" instead of "Full Time Regular"
+                                $status = str_replace(' ', '-', strtolower($balance['employment_status']));
+                                $employment_display = ucfirst($status) . ' ' . $balance['employment_type'];
+                            } else if ($balance['employment_type']) {
+                                $employment_display = $balance['employment_type'];
+                            } else if ($balance['regularization_status_name']) {
+                                $employment_display = $balance['regularization_status_name'];
+                            } else {
+                                $employment_display = $balance['is_regular'] ? 'Regular' : 'Probationary';
+                            }
+                            
+                            // Set color based on employment type
+                            if (strpos($employment_display, 'Regular') !== false) {
+                                $status_class = 'bg-green-500 text-white border border-green-600';
+                            } else if (strpos($employment_display, 'Probationary') !== false) {
+                                $status_class = 'bg-blue-100 text-blue-800 border border-blue-200';
+                            } else if (strpos($employment_display, 'Contractual') !== false) {
+                                $status_class = 'bg-orange-100 text-orange-800 border border-orange-200';
+                            } else if (strpos($employment_display, 'Part Time') !== false) {
+                                $status_class = 'bg-purple-100 text-purple-800 border border-purple-200';
+                            } else if (strpos($employment_display, 'Visiting') !== false) {
+                                $status_class = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                            }
+                            ?>
+                            <span class="inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-medium text-center <?php echo $status_class; ?>">
+                                <?php echo htmlspecialchars($employment_display); ?>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <?php 
+                    // Check if this is a Full-time Probationary employee for mobile view
+                    $is_fulltime_probationary_mobile = (strpos(strtolower($employment_display), 'full-time') !== false && 
+                                                       strpos(strtolower($employment_display), 'probationary') !== false);
+                    
+                    if ($is_fulltime_probationary_mobile): ?>
+                        <!-- Pill format for Full-time Probationary (Mobile) -->
+                    <div class="grid grid-cols-2 gap-4 mb-3 text-sm">
+                        <div>
+                                <span class="text-gray-500">Remaining Base:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-blue-100 text-blue-800">
+                                        <?php echo $balance['base_days']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Accumulated:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-gray-100 text-gray-600">
+                                        N/A
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Days:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-100 text-green-800">
+                                        <?php echo $balance['total_days']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Used:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-red-100 text-red-800">
+                                        <?php echo $balance['used_days']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Remaining:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-emerald-100 text-emerald-800">
+                                        <?php echo $balance['remaining_days']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Previous Year Approved:</span>
+                                <div>
+                                    <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-indigo-100 text-indigo-800">
+                                        <?php echo $balance['previous_year_approved']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Leave Types:</span>
+                                <div class="font-medium text-xs text-gray-600"><?php echo htmlspecialchars($balance['leave_types']); ?></div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <!-- Regular format for other employees (Mobile) -->
+                        <div class="grid grid-cols-2 gap-4 mb-3 text-sm">
+                            <div>
+                                <span class="text-gray-500">Remaining Base:</span>
+                                <div class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-blue-100 text-blue-800 border border-blue-200">
+                                    <?php echo $balance['base_days']; ?>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Accumulated:</span>
+                                <div class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-100 text-green-800 border border-green-200">
+                                    <?php 
+                                    // For faculty, only show accumulated days if they are regular
+                                    if ($balance['source_table'] === 'faculty') {
+                                        echo $balance['is_regular'] ? $balance['accumulated_days'] : '<span class="text-gray-400 italic">N/A</span>';
+                                    } else {
+                                        // For employees, show accumulated days normally
+                                        echo $balance['accumulated_days'];
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Days:</span>
+                                <div class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-green-500 text-white border border-green-600">
+                                    <?php echo $balance['total_days']; ?>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Used:</span>
+                                <div class="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium text-center bg-red-100 text-red-800 border border-red-200">
+                                    <?php echo $balance['used_days']; ?>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Total Remaining:</span>
+                                <div class="font-medium <?php echo $balance['remaining_days'] > 0 ? 'text-green-600' : 'text-red-600'; ?>"><?php echo $balance['remaining_days']; ?></div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Previous Year Approved:</span>
+                                <div class="font-medium">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                        <?php echo $balance['previous_year_approved']; ?>
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Leave Types:</span>
+                                <div class="font-medium text-xs text-gray-600"><?php echo htmlspecialchars($balance['leave_types']); ?></div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.querySelector('form[method="GET"]');
+    const filterInputs = filterForm.querySelectorAll('select, input[type="text"]');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+    
+    // Don't auto-submit on search input to allow typing
+    const searchInput = filterForm.querySelector('input[name="search"]');
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            filterForm.submit();
+        }
+    });
+});
+</script>
+

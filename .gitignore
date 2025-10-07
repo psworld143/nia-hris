@@ -1,0 +1,67 @@
+# NIA-HRIS Git Ignore File
+
+# Environment and Configuration (if sensitive)
+# config/database.php  # Uncomment if database credentials should not be versioned
+
+# Uploaded Files and User Data
+uploads/*
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Backup Files
+*.backup
+*.bak
+*.old
+*_backup.php
+*_original.php
+*.sql.gz
+*.json.backup
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary Files
+*.tmp
+*.temp
+*.cache
+temp/
+tmp/
+
+# PHP Session Files
+sessions/
+
+# Composer (if used in future)
+/vendor/
+composer.lock
+
+# Node modules (if used in future)
+node_modules/
+package-lock.json
+
+# Error Logs
+error_log
+php_errors.log
+
+# Specific backup files in root
+employee_salaries_backup_*.json
+salary_data_backup_*.json
+

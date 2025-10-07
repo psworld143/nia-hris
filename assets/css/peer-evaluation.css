@@ -1,0 +1,662 @@
+/* Peer Evaluation Enhanced UI Styles - HR Manager Version */
+
+/* Prevent horizontal overflow */
+body {
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Page Header Styles - Consistent with HR portal */
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+@media (min-width: 640px) {
+    .page-title {
+        font-size: 2.25rem;
+    }
+    
+    .page-subtitle {
+        font-size: 1rem;
+    }
+}
+
+/* Action Button Styles - Consistent with HR portal */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background-color: #FF6B35;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #ea580c;
+}
+
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #4b5563;
+}
+
+.btn-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #059669;
+}
+
+.btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+}
+
+/* Button icon spacing */
+.action-btn i {
+    margin-right: 0.5rem;
+}
+
+/* Status Badge Styles - Consistent with HR portal */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: capitalize;
+    transition: all 0.2s ease-in-out;
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+}
+
+.status-completed {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-draft {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.status-inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Form Field Styles - Consistent with HR portal */
+.form-field {
+    margin-bottom: 1rem;
+}
+
+.form-field label {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #FF6B35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.form-input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Message Styles - Consistent with HR portal */
+.message {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+}
+
+.message-success {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+}
+
+.message-error {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+/* Card Styles - Consistent with HR portal */
+.card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.card-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Progress Bar */
+.progress-bar {
+    background: linear-gradient(90deg, #FF6B35 0%, #FF8C42 100%);
+    transition: width 0.5s ease-in-out;
+    border-radius: 9999px;
+}
+
+/* Question Cards */
+.question-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.question-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.question-card.answered {
+    border-left-color: #10B981;
+    background-color: #F0FDF4;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+
+/* Rating Stars */
+.rating-stars {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.rating-star {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 2px solid #E5E7EB;
+    background: white;
+    min-width: 60px;
+    text-align: center;
+    font-weight: 500;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+/* Fix: ensure radio inputs are present and clickable via label */
+.rating-star input.hidden {
+    display: block !important;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+}
+
+.rating-star.selected {
+    border-color: #FF6B35;
+    background-color: #FF6B35;
+    color: white;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Answer Status */
+.answer-status {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.answer-status.answered {
+    background-color: #10b981;
+    color: white;
+}
+
+.answer-status.pending {
+    background-color: #f59e0b;
+    color: white;
+}
+
+/* Category Tabs - Uniform Design */
+.category-tab {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+    background: white;
+    color: #374151;
+    border-color: #e5e7eb;
+}
+
+.category-tab:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #f9fafb;
+}
+
+.category-tab.active {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+    box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+    border-color: #f97316;
+}
+
+/* Progress Badge */
+.progress-badge {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.category-tab.active .progress-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Check Icon */
+.check-icon {
+    color: #10b981;
+}
+
+.category-tab.active .check-icon {
+    color: white;
+}
+
+/* Chevron Icon */
+.chevron-icon {
+    color: #9ca3af;
+}
+
+.category-tab.active .chevron-icon {
+    color: white;
+}
+
+/* Sticky Header */
+.sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 0;
+    padding-top: 0;
+}
+
+/* Category Content */
+.category-content {
+    display: none;
+}
+
+.category-content.active {
+    display: block;
+}
+
+/* Enhanced Form Elements */
+.enhanced-textarea {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    border: 2px solid #E5E7EB;
+}
+
+.enhanced-textarea:focus {
+    border-color: #FF6B35;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+/* Yes/No Options */
+.yes-no-option {
+    transition: all 0.2s ease;
+}
+
+.yes-no-option.selected-yes {
+    border-color: #10B981;
+    background-color: #F0FDF4;
+}
+
+.yes-no-option.selected-no {
+    border-color: #EF4444;
+    background-color: #FEF2F2;
+}
+
+/* Multiple Choice Options */
+.multiple-choice-option {
+    transition: all 0.2s ease;
+}
+
+.multiple-choice-option.selected {
+    border-color: #FF6B35;
+    background-color: #FFF8F0;
+}
+
+/* Text Answer Filled */
+.text-answer-filled {
+    border-color: #10B981;
+    background-color: #F0FDF4;
+}
+
+/* Statistics Cards - HR specific */
+.stats-card {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stats-icon {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stats-card:hover .stats-icon {
+    transform: scale(1.1);
+}
+
+/* Department Filter Styles */
+.department-filter {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid #cbd5e0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-select {
+    background-color: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #FF6B35;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+}
+
+/* HR Management specific styles */
+.hr-evaluation-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.hr-evaluation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-color: #FF6B35;
+}
+
+.evaluator-evaluatee-flow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(90deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 0.5rem;
+    border: 1px solid #bae6fd;
+}
+
+.flow-arrow {
+    color: #0ea5e9;
+    font-size: 1.25rem;
+    animation: pulse 2s infinite;
+}
+
+/* Print styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-only {
+        display: block !important;
+    }
+    
+    .bg-white {
+        background: white !important;
+    }
+    
+    .text-gray-600 {
+        color: #4b5563 !important;
+    }
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+    .hr-evaluation-card {
+        padding: 1rem;
+    }
+    
+    .evaluator-evaluatee-flow {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .flow-arrow {
+        transform: rotate(90deg);
+    }
+    
+    .rating-stars {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .rating-star {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .rating-stars {
+        gap: 4px;
+    }
+    
+    .rating-star {
+        padding: 6px 8px;
+        min-width: 50px;
+        font-size: 0.75rem;
+    }
+    
+    .question-card {
+        padding: 0.75rem;
+    }
+    
+    .form-field {
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-input {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #FF6B35;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Focus States */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Animations */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* HR specific evaluation info cards */
+.evaluation-info-card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.evaluation-info-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
