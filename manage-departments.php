@@ -5,7 +5,7 @@ require_once 'includes/functions.php';
 require_once 'includes/id_encryption.php';
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     header('Location: index.php');
     exit();
 }

@@ -9,8 +9,8 @@ require_once 'includes/leave_allowance_calculator_v2.php';
 // Database connection is now enforced in config/database.php
 
 // Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: /seait/index.php?login=required&redirect=leave-allowance-management');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
+    header('Location: index.php');
     exit();
 }
 
@@ -429,272 +429,204 @@ function calculateDynamicLeaveBalance($employee_data, $employee_type, $year) {
 include 'includes/header.php';
 ?>
 
-<div class="container mx-auto px-4 py-8">
-    <!-- Page Header -->
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Leave Allowance Management</h1>
-            <p class="text-gray-600">Track and manage leave allowances for admin staff and faculty</p>
-        </div>
-        <div class="flex space-x-3">
-            <a href="leave-management.php" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-                <i class="fas fa-calendar-alt"></i>
-                Leave Requests
-            </a>
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-calendar-check mr-2"></i>Leave Allowance Management
+                </h2>
+                <p class="opacity-90">Track and manage employee leave allowances and balances</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <?php if (function_exists('getRoleBadge')): ?>
+                    <?php echo getRoleBadge($_SESSION['role']); ?>
+                <?php endif; ?>
+                <a href="leave-management.php" class="bg-white text-emerald-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-calendar-alt mr-2"></i>Leave Requests
+                </a>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Success/Error Messages -->
-    <?php if (isset($_SESSION['message'])): ?>
-        <div class="mb-6">
-            <?php if ($_SESSION['message_type'] === 'success'): ?>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle text-green-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-green-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
-                        </div>
-                    </div>
-                </div>
-            <?php elseif ($_SESSION['message_type'] === 'warning'): ?>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-yellow-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
-                        </div>
-                    </div>
-                </div>
-            <?php elseif ($_SESSION['message_type'] === 'error'): ?>
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-times-circle text-red-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm font-medium text-red-800"><?php echo htmlspecialchars($_SESSION['message']); ?></p>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
+<!-- Success/Error Messages -->
+<?php if (isset($_SESSION['message'])): ?>
+    <div class="mb-4 p-4 rounded-lg <?php echo $_SESSION['message_type'] === 'success' ? 'bg-green-100 text-green-700 border border-green-400' : 'bg-red-100 text-red-700 border border-red-400'; ?>">
+        <i class="fas <?php echo $_SESSION['message_type'] === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?> mr-2"></i>
+        <?php echo htmlspecialchars($_SESSION['message']); ?>
+    </div>
+    <?php 
+    unset($_SESSION['message']);
+    unset($_SESSION['message_type']);
+    ?>
+<?php endif; ?>
+<!-- Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-users text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Employees</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['employee']['total_employees'] ?? 0; ?></p>
+                <p class="text-xs text-green-600 mt-1">Regular: <?php echo $stats['employee']['regular_employees'] ?? 0; ?></p>
+            </div>
         </div>
-        <?php 
-        // Clear the message after displaying it
-        unset($_SESSION['message']);
-        unset($_SESSION['message_type']);
-        ?>
-    <?php endif; ?>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-chalkboard-teacher text-purple-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Faculty</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['faculty']['total_employees'] ?? 0; ?></p>
+                <p class="text-xs text-green-600 mt-1">Regular: <?php echo $stats['faculty']['regular_employees'] ?? 0; ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-calendar-check text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Available Days</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo number_format(($stats['employee']['total_available_days'] ?? 0) + ($stats['faculty']['total_available_days'] ?? 0)); ?></p>
+                <p class="text-xs text-blue-600 mt-1">Base: <?php echo number_format(($stats['employee']['total_base_days'] ?? 0) + ($stats['faculty']['total_base_days'] ?? 0)); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-clock text-orange-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Remaining Days</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo number_format(($stats['employee']['total_remaining_days'] ?? 0) + ($stats['faculty']['total_remaining_days'] ?? 0)); ?></p>
+                <p class="text-xs text-red-600 mt-1">Used: <?php echo number_format(($stats['employee']['total_used_days'] ?? 0) + ($stats['faculty']['total_used_days'] ?? 0)); ?></p>
+            </div>
+        </div>
+    </div>
+</div>
 
-    <!-- Leave Allowance Rules Info -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-        <h3 class="text-lg font-semibold text-blue-900 mb-3">
-            <i class="fas fa-info-circle mr-2"></i>Leave Allowance Rules
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">
+            <i class="fas fa-filter text-emerald-600 mr-2"></i>Filter Allowances
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-                <h4 class="font-semibold text-blue-800 mb-2">Admin Employees:</h4>
-                <ul class="space-y-1 text-blue-700">
-                    <li>• 5 days leave with pay regardless of employment status</li>
-                    <li>• Entitled for regularization after 6 months</li>
-                    <li>• Regular employees: unused leave carries over to next year</li>
-                    <li>• Non-regular employees: leave resets every year</li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-semibold text-blue-800 mb-2">Faculty:</h4>
-                <ul class="space-y-1 text-blue-700">
-                    <li>• 5 days leave with pay regardless of employment status</li>
-                    <li>• Entitled for regularization after 3 years</li>
-                    <li>• Can only enjoy accumulated leave after 3 years (regularization)</li>
-                    <li>• Non-regular faculty: leave resets every year</li>
-                </ul>
-            </div>
-        </div>
+        <a href="leave-allowance-management.php?tab=<?php echo htmlspecialchars($current_tab); ?>" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+            <i class="fas fa-redo mr-1"></i>Reset Filters
+        </a>
     </div>
-
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                    <i class="fas fa-users text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Employees</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['employee']['total_employees'] ?? 0; ?></p>
-                </div>
-            </div>
-            <div class="mt-4 text-xs">
-                <div class="text-green-600">Regular Employees: <?php echo $stats['employee']['regular_employees'] ?? 0; ?></div>
-            </div>
+    
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <input type="hidden" name="tab" value="<?php echo htmlspecialchars($current_tab); ?>">
+        
+        <div>
+            <label for="year-filter" class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+            <select name="year" id="year-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <?php for ($year = $current_year + 2; $year >= $current_year - 2; $year--): ?>
+                    <option value="<?php echo $year; ?>" <?php echo $year_filter == $year ? 'selected' : ''; ?>><?php echo $year; ?></option>
+                <?php endfor; ?>
+            </select>
         </div>
         
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                    <i class="fas fa-chalkboard-teacher text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Faculty</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['faculty']['total_employees'] ?? 0; ?></p>
-                </div>
-            </div>
-            <div class="mt-4 text-xs">
-                <div class="text-green-600">Regular Faculty: <?php echo $stats['faculty']['regular_employees'] ?? 0; ?></div>
-            </div>
+        <div>
+            <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+            <select name="department" id="department-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <option value="">All Departments</option>
+                <?php foreach ($departments as $dept): ?>
+                    <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
         
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600">
-                    <i class="fas fa-calendar-check text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total Available Days</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format(($stats['employee']['total_available_days'] ?? 0) + ($stats['faculty']['total_available_days'] ?? 0)); ?></p>
-                </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div class="text-blue-600">Base: <?php echo number_format(($stats['employee']['total_base_days'] ?? 0) + ($stats['faculty']['total_base_days'] ?? 0)); ?></div>
-                <div class="text-purple-600">Accumulated: <?php echo number_format(($stats['employee']['total_accumulated_days'] ?? 0) + ($stats['faculty']['total_accumulated_days'] ?? 0)); ?></div>
-            </div>
+        <div>
+            <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select name="status" id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+                <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                <option value="regular" <?php echo $status_filter === 'regular' ? 'selected' : ''; ?>>Regular</option>
+                <option value="probationary" <?php echo $status_filter === 'probationary' ? 'selected' : ''; ?>>Probationary</option>
+            </select>
         </div>
         
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600">
-                    <i class="fas fa-clock text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Remaining Days</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo number_format(($stats['employee']['total_remaining_days'] ?? 0) + ($stats['faculty']['total_remaining_days'] ?? 0)); ?></p>
-                </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div class="text-red-600">Used: <?php echo number_format(($stats['employee']['total_used_days'] ?? 0) + ($stats['faculty']['total_used_days'] ?? 0)); ?></div>
-                <div class="text-gray-600">Year: <?php echo $year_filter; ?></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabs -->
-    <!-- Leave Allowance Management - Employee System -->
-    <div class="mb-6">
-        <div class="border-b border-gray-200 pb-2">
-            <h2 class="text-lg font-semibold text-gray-800">
-                <i class="fas fa-calendar-check text-green-600 mr-2"></i>Employee Leave Allowances
-                <span class="ml-3 bg-gray-100 text-gray-900 py-1 px-3 rounded-full text-sm font-medium"><?php echo $stats['employee']['total_employees'] ?? 0; ?> Employees</span>
-            </h2>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow mb-6">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Filters</h3>
-        </div>
-        <div class="p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <input type="hidden" name="tab" value="<?php echo htmlspecialchars($current_tab); ?>">
-                
-                <div>
-                    <label for="year-filter" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                    <select name="year" id="year-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <?php for ($year = $current_year + 2; $year >= $current_year - 2; $year--): ?>
-                            <option value="<?php echo $year; ?>" <?php echo $year_filter == $year ? 'selected' : ''; ?>>
-                                <?php echo $year; ?>
-                            </option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <select name="department" id="department-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">All Departments</option>
-                        <?php foreach ($departments as $dept): ?>
-                            <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" id="status-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                        <option value="regular" <?php echo $status_filter === 'regular' ? 'selected' : ''; ?>>Regular</option>
-                        <option value="probationary" <?php echo $status_filter === 'probationary' ? 'selected' : ''; ?>>Probationary</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name, ID..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-                
-                <div class="flex items-end space-x-2">
-                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex-1">
-                        <i class="fas fa-search mr-2"></i>Filter
-                    </button>
-                    <a href="leave-allowance-management.php?tab=<?php echo htmlspecialchars($current_tab); ?>" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
-                        <i class="fas fa-times"></i>
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Leave Allowances Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <?php 
-            // Calculate unique employee/faculty count
-            $unique_people = [];
-            foreach ($leave_balances as $balance) {
-                $unique_people[$balance['employee_id']] = true;
-            }
-            $people_count = count($unique_people);
-            
-            // Determine the correct label
-            if ($current_tab === 'employees') {
-                $count_label = $people_count . ' employee' . ($people_count != 1 ? 's' : '');
-            } elseif ($current_tab === 'faculty') {
-                $count_label = $people_count . ' faculty member' . ($people_count != 1 ? 's' : '');
-            } else {
-                $count_label = $people_count . ' people';
-            }
-            ?>
-            <h3 class="text-lg font-medium text-gray-900">Leave Allowances - <?php echo ucfirst($current_tab); ?> (<?php echo $count_label; ?>)</h3>
+        <div>
+            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name or ID..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
         </div>
         
-        <!-- Desktop Table View -->
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Employee</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Status</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Remaining Base</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Accumulated</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Days</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Used</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Total Remaining</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Previous Year Approved</th>
-                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Leave Types & Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <?php if (empty($leave_balances)): ?>
-                    <tr>
-                        <td colspan="9" class="px-4 py-4 text-center text-gray-500">No leave allowance data found.</td>
-                    </tr>
-                    <?php else: ?>
-                        <?php foreach ($leave_balances as $balance): ?>
-                        <tr class="hover:bg-gray-50">
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                <i class="fas fa-search mr-2"></i>Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Leave Allowances Table -->
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <?php 
+    // Calculate unique employee/faculty count
+    $unique_people = [];
+    foreach ($leave_balances as $balance) {
+        $unique_people[$balance['employee_id']] = true;
+    }
+    $people_count = count($unique_people);
+    
+    // Determine the correct label
+    if ($current_tab === 'employees') {
+        $count_label = $people_count . ' employee' . ($people_count != 1 ? 's' : '');
+    } elseif ($current_tab === 'faculty') {
+        $count_label = $people_count . ' faculty member' . ($people_count != 1 ? 's' : '');
+    } else {
+        $count_label = $people_count . ' people';
+    }
+    ?>
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Leave Allowances - <?php echo ucfirst($current_tab); ?></h3>
+        <span class="text-sm text-gray-500"><?php echo $count_label; ?></span>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-r from-emerald-600 to-emerald-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Base</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Accumulated</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Total</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Used</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Remaining</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Prev Year</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (empty($leave_balances)): ?>
+                <tr>
+                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-calendar-alt text-gray-400 text-3xl"></i>
+                            </div>
+                            <p class="text-lg font-medium text-gray-700">No leave allowance data found</p>
+                            <p class="text-sm text-gray-500 mt-1">Try adjusting your filters or add employees to see data.</p>
+                        </div>
+                    </td>
+                </tr>
+                <?php else: ?>
+                    <?php foreach ($leave_balances as $balance): ?>
+                    <tr class="hover:bg-emerald-50 transition-colors">
                             <td class="px-4 py-4">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-8 w-8">

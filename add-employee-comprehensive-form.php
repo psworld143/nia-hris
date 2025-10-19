@@ -243,9 +243,9 @@ include 'includes/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-2">Employee Type <span class="text-red-500">*</span></label>
                 <select name="employee_type" required class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
                     <option value="">Select Type</option>
-                    <option value="staff">Staff</option>
-                    <option value="admin">Admin</option>
-                    <option value="faculty">Faculty</option>
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Nurse">Nurse</option>
                 </select>
             </div>
             
@@ -253,10 +253,11 @@ include 'includes/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
                 <select name="employment_type" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
                     <option value="">Select Employment Type</option>
-                    <option value="Probationary">Probationary</option>
-                    <option value="Regular">Regular</option>
-                    <option value="Contractual">Contractual</option>
-                    <option value="Part Time">Part Time</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Casual/Project">Casual/Project</option>
+                    <option value="Casual Subsidy">Casual Subsidy</option>
+                    <option value="Job Order">Job Order</option>
+                    <option value="Contract of Service">Contract of Service</option>
                 </select>
             </div>
             

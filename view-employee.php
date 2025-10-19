@@ -13,7 +13,7 @@ if (!$conn || mysqli_connect_errno()) {
 }
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager', 'nurse'])) {
     header('Location: index.php');
     exit();
 }
@@ -66,13 +66,18 @@ $employee_query = "SELECT e.id, e.employee_id, e.first_name, e.last_name, e.emai
 $employee_stmt = mysqli_prepare($conn, $employee_query);
 if ($employee_stmt) {
     mysqli_stmt_bind_param($employee_stmt, "i", $employee_id);
-    if (!checkDatabaseStatement($employee_stmt, "employee_details")) {
+    
+    // Execute the statement
+    if (!mysqli_stmt_execute($employee_stmt)) {
         // If we can't redirect due to headers already sent, show a user-friendly error
         if (headers_sent()) {
             echo '<div style="background: #fee; border: 1px solid #fcc; padding: 20px; margin: 20px; border-radius: 5px; color: #c33;">
                     <h2>Database Error</h2>
                     <p>Unable to retrieve employee information. Please try refreshing the page or contact support if the problem persists.</p>
                   </div>';
+            exit();
+        } else {
+            header('Location: admin-employee.php');
             exit();
         }
     }

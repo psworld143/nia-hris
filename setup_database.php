@@ -295,3 +295,4 @@ echo "Username: admin<br>";
 echo "Password: admin123<br>";
 echo "<br><a href='login.php'>Go to Login Page</a>";
 ?>
+

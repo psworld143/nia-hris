@@ -73,3 +73,4 @@ echo "Current Time: " . date('Y-m-d H:i:s') . "<br>";
 echo "<br><a href='login.php'>Go to Login Page</a>";
 echo "<br><a href='index.php'>Go to Dashboard</a>";
 ?>
+

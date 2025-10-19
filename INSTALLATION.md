@@ -125,3 +125,4 @@
 **Installation completed successfully!** 🎉
 
 The NIA-HRIS system is now ready for use. You can start adding employees, managing leave requests, and utilizing all the HR management features.
+

@@ -13,8 +13,9 @@ if (mysqli_num_rows($result) == 0) {
 }
 
 // Check if user is logged in and has human_resource or hr_manager role
-if (!isset($_SESSION['user_id']) || (!in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager']) && $_SESSION['role'] !== 'hr_manager')) {
-    header('Location: ../index.php');
+// Only Super Admin can access settings
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'super_admin') {
+    header('Location: index.php');
     exit();
 }
 

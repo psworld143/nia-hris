@@ -5,8 +5,8 @@ require_once 'config/database.php';
 require_once 'includes/functions.php';
 
 // Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: ../index.php');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])) {
+    header('Location: index.php');
     exit();
 }
 
@@ -121,308 +121,247 @@ $all_criteria = mysqli_fetch_all($result, MYSQLI_ASSOC);
 include 'includes/header.php';
 ?>
 
-<style>
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.animate-slideIn {
-    animation: slideIn 0.5s ease-out;
-}
-
-.animate-fadeIn {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* Custom scrollbar for modals */
-.modal-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-.modal-content::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 10px;
-}
-
-.modal-content::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Pulse animation for Add button */
-@keyframes pulse {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-    }
-    50% {
-        box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
-    }
-}
-
-.pulse-animation {
-    animation: pulse 2s infinite;
-}
-</style>
-
-<div class="container mx-auto px-4 py-6">
-    <!-- Page Header -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-seait-dark mb-2">
-                    <i class="fas fa-list-ul text-seait-orange mr-3"></i>Regularization Criteria Management
-                </h1>
-                <p class="text-gray-600">Manage criteria for employee and faculty regularization</p>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-clipboard-check mr-2"></i>Regularization Criteria Management
+                </h2>
+                <p class="opacity-90">Manage criteria for employee regularization process</p>
             </div>
-            <div class="mt-4 sm:mt-0">
-                <button onclick="openAddModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-xl transform hover:scale-105 pulse-animation font-semibold">
-                    <i class="fas fa-plus-circle mr-2"></i>Add New Criteria
+            <div class="flex items-center gap-3">
+                <?php if (function_exists('getRoleBadge')): ?>
+                    <?php echo getRoleBadge($_SESSION['role']); ?>
+                <?php endif; ?>
+                <button onclick="openAddModal()" class="bg-white text-teal-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add New Criteria
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg shadow-lg p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-blue-500 animate-slideIn">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white shadow-md">
-                    <i class="fas fa-list-check text-2xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Criteria</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-lg p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-purple-500 animate-slideIn" style="animation-delay: 0.1s;">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-white shadow-md">
-                    <i class="fas fa-user-tie text-2xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Employee Criteria</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-gradient-to-br from-white to-green-50 rounded-lg shadow-lg p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-xl border-l-4 border-green-500 animate-slideIn" style="animation-delay: 0.2s;">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-gradient-to-br from-green-400 to-green-600 text-white shadow-md">
-                    <i class="fas fa-check-circle text-2xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Active Criteria</p>
-                    <p class="text-3xl font-bold text-gray-900"><?php echo count(array_filter($all_criteria, function($c) { return $c['is_active'] == 1; })); ?></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Criteria Table -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">Regularization Criteria</h3>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-tag text-seait-orange mr-2"></i>Criteria Name
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-user-tie text-seait-orange mr-2"></i>Type
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-calendar-alt text-seait-orange mr-2"></i>Min Months
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-star text-seait-orange mr-2"></i>Performance
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-percentage text-seait-orange mr-2"></i>Attendance
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-toggle-on text-seait-orange mr-2"></i>Status
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                            <i class="fas fa-cog text-seait-orange mr-2"></i>Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <?php if (empty($all_criteria)): ?>
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                <i class="fas fa-inbox text-4xl mb-4 block"></i>
-                                No criteria found. Click "Add New Criteria" to create your first criteria.
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($all_criteria as $criteria): ?>
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($criteria['criteria_name']); ?></div>
-                                    <div class="text-sm text-gray-500"><?php echo htmlspecialchars(substr($criteria['criteria_description'], 0, 50)) . (strlen($criteria['criteria_description']) > 50 ? '...' : ''); ?></div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <i class="fas fa-user-tie mr-1"></i>
-                                        Employee
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <?php echo $criteria['minimum_months']; ?> months
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <?php echo $criteria['performance_rating_min']; ?>/5.0
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <?php echo $criteria['attendance_percentage_min']; ?>%
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $criteria['is_active'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
-                                        <i class="fas <?php echo $criteria['is_active'] ? 'fa-check-circle' : 'fa-times-circle'; ?> mr-1"></i>
-                                        <?php echo $criteria['is_active'] ? 'Active' : 'Inactive'; ?>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex space-x-2">
-                                        <button onclick="viewCriteria(<?php echo $criteria['id']; ?>)" class="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="editCriteria(<?php echo $criteria['id']; ?>)" class="p-2 rounded-lg bg-indigo-100 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="toggleStatus(<?php echo $criteria['id']; ?>, <?php echo $criteria['is_active'] ? 'false' : 'true'; ?>)" class="p-2 rounded-lg bg-<?php echo $criteria['is_active'] ? 'yellow' : 'green'; ?>-100 text-<?php echo $criteria['is_active'] ? 'yellow' : 'green'; ?>-600 hover:bg-<?php echo $criteria['is_active'] ? 'yellow' : 'green'; ?>-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="<?php echo $criteria['is_active'] ? 'Deactivate' : 'Activate'; ?>">
-                                            <i class="fas <?php echo $criteria['is_active'] ? 'fa-pause-circle' : 'fa-play-circle'; ?>"></i>
-                                        </button>
-                                        <button onclick="deleteCriteria(<?php echo $criteria['id']; ?>)" class="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md" title="Delete">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
 
-<!-- Add/Edit Modal -->
-<div id="criteriaModal" class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 backdrop-blur-sm transition-all duration-300" style="opacity: 0;">
-    <div class="relative top-10 mx-auto p-0 border-0 w-11/12 md:w-2/3 lg:w-2/5 max-w-2xl shadow-2xl rounded-2xl bg-white transform transition-all duration-300 scale-95" id="criteriaModalContent">
-        <!-- Modal Header -->
-        <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-t-2xl px-5 py-4 shadow-lg">
-            <div class="flex items-center justify-between">
-                <h3 id="modalTitle" class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-plus-circle mr-2 text-white"></i>
-                    <span>Add New Criteria</span>
-                </h3>
-                <button onclick="closeModal()" class="text-white hover:text-gray-200 transition-all duration-200 hover:rotate-90 transform hover:scale-110">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
+<!-- Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-list-check text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Criteria</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
             </div>
         </div>
-        <div class="p-5">
-            
-            <!-- Modal Body -->
-            <form id="criteriaForm" class="space-y-4">
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-users text-purple-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Employee Criteria</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Active Criteria</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo count(array_filter($all_criteria, function($c) { return $c['is_active'] == 1; })); ?></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Criteria Table -->
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Regularization Criteria List</h3>
+        <span class="text-sm text-gray-500"><?php echo count($all_criteria); ?> criteria</span>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-r from-teal-600 to-teal-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Criteria Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Min Months</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Performance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Attendance</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (empty($all_criteria)): ?>
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-clipboard-list text-gray-400 text-3xl"></i>
+                            </div>
+                            <p class="text-lg font-medium text-gray-700">No regularization criteria found</p>
+                            <p class="text-sm text-gray-500 mt-1">Create your first criteria to get started.</p>
+                            <button onclick="openAddModal()" class="mt-4 bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+                                <i class="fas fa-plus mr-2"></i>Add Criteria
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php else: ?>
+                <?php foreach ($all_criteria as $criteria): ?>
+                <tr class="hover:bg-teal-50 transition-colors">
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($criteria['criteria_name']); ?></div>
+                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars(substr($criteria['criteria_description'], 0, 50)) . (strlen($criteria['criteria_description']) > 50 ? '...' : ''); ?></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <i class="fas fa-user-tie mr-1"></i>Employee
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                            <?php echo $criteria['minimum_months']; ?> months
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            <i class="fas fa-star mr-1"></i><?php echo $criteria['performance_rating_min']; ?>/5.0
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            <?php echo $criteria['attendance_percentage_min']; ?>%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $criteria['is_active'] ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                            <i class="fas <?php echo $criteria['is_active'] ? 'fa-check-circle' : 'fa-times-circle'; ?> mr-1"></i>
+                            <?php echo $criteria['is_active'] ? 'Active' : 'Inactive'; ?>
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex items-center gap-3">
+                            <button onclick="viewCriteria(<?php echo $criteria['id']; ?>)" class="text-teal-600 hover:text-teal-900" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editCriteria(<?php echo $criteria['id']; ?>)" class="text-blue-600 hover:text-blue-900" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="toggleStatus(<?php echo $criteria['id']; ?>, <?php echo $criteria['is_active'] ? 'false' : 'true'; ?>)" class="text-<?php echo $criteria['is_active'] ? 'yellow' : 'green'; ?>-600 hover:text-<?php echo $criteria['is_active'] ? 'yellow' : 'green'; ?>-900" title="<?php echo $criteria['is_active'] ? 'Deactivate' : 'Activate'; ?>">
+                                <i class="fas <?php echo $criteria['is_active'] ? 'fa-pause-circle' : 'fa-play-circle'; ?>"></i>
+                            </button>
+                            <button onclick="deleteCriteria(<?php echo $criteria['id']; ?>)" class="text-red-600 hover:text-red-900" title="Delete">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="criteriaModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-xl bg-white mb-10" id="criteriaModalContent">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-plus-circle text-teal-600 mr-2"></i>
+                    <span>Add New Criteria</span>
+                </h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="criteriaForm" class="space-y-5">
                 <input type="hidden" id="criteriaId" name="id">
                 <input type="hidden" name="ajax" value="1">
                 <input type="hidden" id="formAction" name="action" value="create">
+                <input type="hidden" name="employee_type" value="employee">
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Criteria Name -->
                     <div class="md:col-span-2">
-                        <label for="criteria_name" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-tag text-seait-orange mr-1.5 text-sm"></i>
-                            Criteria Name *
+                        <label for="criteria_name" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-tag text-teal-600 mr-2"></i>Criteria Name <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" id="criteria_name" name="criteria_name" required class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="Enter criteria name">
+                        <input type="text" id="criteria_name" name="criteria_name" required 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="Enter criteria name">
                     </div>
-                    
-                    <!-- Employee Type - Hidden, always 'employee' -->
-                    <input type="hidden" name="employee_type" value="employee">
                     
                     <!-- Minimum Months -->
                     <div>
-                        <label for="minimum_months" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-calendar-alt text-seait-orange mr-1.5 text-sm"></i>
-                            Minimum Months *
+                        <label for="minimum_months" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-alt text-teal-600 mr-2"></i>Minimum Months <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="minimum_months" name="minimum_months" min="0" required class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="0">
+                        <input type="number" id="minimum_months" name="minimum_months" min="0" required 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="0">
                     </div>
                     
                     <!-- Performance Rating -->
                     <div>
-                        <label for="performance_rating_min" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-star text-seait-orange mr-1.5 text-sm"></i>
-                            Min Performance *
+                        <label for="performance_rating_min" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-star text-teal-600 mr-2"></i>Min Performance <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="performance_rating_min" name="performance_rating_min" min="0" max="5" step="0.1" required class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="0.0">
+                        <input type="number" id="performance_rating_min" name="performance_rating_min" min="0" max="5" step="0.1" required 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="0.0">
                     </div>
                     
                     <!-- Attendance Percentage -->
                     <div>
-                        <label for="attendance_percentage_min" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-percentage text-seait-orange mr-1.5 text-sm"></i>
-                            Min Attendance % *
+                        <label for="attendance_percentage_min" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-percentage text-teal-600 mr-2"></i>Min Attendance % <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="attendance_percentage_min" name="attendance_percentage_min" min="0" max="100" step="0.01" required class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="0.00">
+                        <input type="number" id="attendance_percentage_min" name="attendance_percentage_min" min="0" max="100" step="0.01" required 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="0.00">
                     </div>
                     
                     <!-- Disciplinary Issues -->
                     <div>
-                        <label for="disciplinary_issues_max" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-exclamation-triangle text-seait-orange mr-1.5 text-sm"></i>
-                            Max Disciplinary
+                        <label for="disciplinary_issues_max" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-exclamation-triangle text-teal-600 mr-2"></i>Max Disciplinary
                         </label>
-                        <input type="number" id="disciplinary_issues_max" name="disciplinary_issues_max" min="0" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="0">
+                        <input type="number" id="disciplinary_issues_max" name="disciplinary_issues_max" min="0" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="0">
                     </div>
                     
                     <!-- Evaluation Score -->
                     <div>
-                        <label for="evaluation_score_min" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                            <i class="fas fa-chart-line text-seait-orange mr-1.5 text-sm"></i>
-                            Min Evaluation Score
+                        <label for="evaluation_score_min" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-chart-line text-teal-600 mr-2"></i>Min Evaluation Score
                         </label>
-                        <input type="number" id="evaluation_score_min" name="evaluation_score_min" min="0" max="100" step="0.01" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 text-sm" placeholder="0.00">
+                        <input type="number" id="evaluation_score_min" name="evaluation_score_min" min="0" max="100" step="0.01" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               placeholder="0.00">
                     </div>
                     
                     <!-- Training Completion -->
-                    <div class="flex items-center md:col-span-2">
-                        <label class="flex items-center cursor-pointer bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-all duration-200 w-full">
-                            <input type="checkbox" id="training_completion_required" name="training_completion_required" class="w-4 h-4 rounded border-gray-300 text-seait-orange focus:ring-seait-orange cursor-pointer">
-                            <span class="ml-2 text-xs font-semibold text-gray-700 flex items-center">
-                                <i class="fas fa-graduation-cap text-seait-orange mr-1.5 text-sm"></i>
-                                Training Completion Required
+                    <div class="md:col-span-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="training_completion_required" name="training_completion_required" 
+                                   class="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                            <span class="ml-3 text-sm font-semibold text-gray-700">
+                                <i class="fas fa-graduation-cap text-teal-600 mr-2"></i>Training Completion Required
                             </span>
                         </label>
                     </div>
@@ -430,30 +369,33 @@ include 'includes/header.php';
                 
                 <!-- Description -->
                 <div>
-                    <label for="criteria_description" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                        <i class="fas fa-align-left text-seait-orange mr-1.5 text-sm"></i>
-                        Description
+                    <label for="criteria_description" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-align-left text-teal-600 mr-2"></i>Description
                     </label>
-                    <textarea id="criteria_description" name="criteria_description" rows="2" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 resize-none text-sm" placeholder="Enter criteria description..."></textarea>
+                    <textarea id="criteria_description" name="criteria_description" rows="3" 
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none" 
+                              placeholder="Enter criteria description..."></textarea>
                 </div>
                 
                 <!-- Additional Requirements -->
                 <div>
-                    <label for="additional_requirements" class="block text-xs font-semibold text-gray-700 mb-1 flex items-center">
-                        <i class="fas fa-list-check text-seait-orange mr-1.5 text-sm"></i>
-                        Additional Requirements
+                    <label for="additional_requirements" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-list-check text-teal-600 mr-2"></i>Additional Requirements
                     </label>
-                    <textarea id="additional_requirements" name="additional_requirements" rows="2" class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-seait-orange focus:border-seait-orange transition-all duration-200 hover:border-gray-400 resize-none text-sm" placeholder="Enter any additional requirements..."></textarea>
+                    <textarea id="additional_requirements" name="additional_requirements" rows="3" 
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none" 
+                              placeholder="Enter any additional requirements..."></textarea>
                 </div>
                 
                 <!-- Modal Footer -->
-                <div class="flex justify-end space-x-2 pt-4 border-t-2 border-gray-100">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200 font-semibold flex items-center shadow-sm hover:shadow text-sm">
-                        <i class="fas fa-times mr-1.5"></i>
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="closeModal()" 
+                            class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-semibold flex items-center shadow-md hover:shadow-lg transform hover:scale-105 text-sm">
-                        <i class="fas fa-save mr-1.5"></i>
+                    <button type="submit" 
+                            class="px-6 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>
                         <span id="submitText">Add Criteria</span>
                     </button>
                 </div>
@@ -463,31 +405,27 @@ include 'includes/header.php';
 </div>
 
 <!-- View Modal -->
-<div id="viewModal" class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 backdrop-blur-sm transition-all duration-300" style="opacity: 0;">
-    <div class="relative top-20 mx-auto p-0 border-0 w-11/12 md:w-2/3 lg:w-1/2 shadow-2xl rounded-2xl bg-white transform transition-all duration-300 scale-95" id="viewModalContent">
-        <!-- View Modal Header -->
-        <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-t-2xl px-6 py-4 shadow-lg">
-            <div class="flex items-center justify-between">
-                <h3 class="text-xl font-bold text-white flex items-center">
-                    <i class="fas fa-info-circle mr-3 text-white"></i>
-                    <span>Criteria Details</span>
+<div id="viewModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-xl bg-white mb-10" id="viewModalContent">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-info-circle text-teal-600 mr-2"></i>Criteria Details
                 </h3>
-                <button onclick="closeViewModal()" class="text-white hover:text-gray-200 transition-all duration-200 hover:rotate-90 transform hover:scale-110">
-                    <i class="fas fa-times text-2xl"></i>
+                <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-        </div>
-        <div class="p-6">
+            
             <!-- Modal Body -->
-            <div id="viewContent" class="space-y-6">
+            <div id="viewContent" class="space-y-4">
                 <!-- Content will be populated by JavaScript -->
             </div>
             
             <!-- Modal Footer -->
-            <div class="flex justify-end pt-6 border-t-2 border-gray-100">
-                <button onclick="closeViewModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200 font-semibold flex items-center shadow-sm hover:shadow">
-                    <i class="fas fa-times mr-2"></i>
-                    Close
+            <div class="flex justify-end pt-6 border-t border-gray-200">
+                <button onclick="closeViewModal()" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Close
                 </button>
             </div>
         </div>
@@ -495,58 +433,44 @@ include 'includes/header.php';
 </div>
 
 <!-- Confirmation Modal -->
-<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 backdrop-blur-sm transition-all duration-300" style="opacity: 0;">
-    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-0 border-0 w-11/12 md:w-1/3 shadow-2xl rounded-2xl bg-white transition-all duration-300 scale-95" id="confirmModalContent">
-        <div class="p-6">
-            <div class="text-center">
-                <div id="confirmIcon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4">
-                    <!-- Icon will be populated by JavaScript -->
-                </div>
-                <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2">
-                    <!-- Title will be populated by JavaScript -->
-                </h3>
-                <p id="confirmMessage" class="text-gray-600 mb-6">
-                    <!-- Message will be populated by JavaScript -->
-                </p>
-                <div class="flex justify-center space-x-3">
-                    <button id="confirmCancelBtn" onclick="closeConfirmModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200 font-semibold flex items-center shadow-sm hover:shadow">
-                        <i class="fas fa-times mr-2"></i>
-                        Cancel
-                    </button>
-                    <button id="confirmActionBtn" class="px-6 py-3 rounded-lg transition-all duration-200 font-semibold flex items-center shadow-md hover:shadow-lg transform hover:scale-105">
-                        <!-- Button content will be populated by JavaScript -->
-                    </button>
-                </div>
+<div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-xl bg-white" id="confirmModalContent">
+        <div class="text-center">
+            <div id="confirmIcon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4">
+                <!-- Icon will be populated by JavaScript -->
+            </div>
+            <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2">
+                <!-- Title will be populated by JavaScript -->
+            </h3>
+            <p id="confirmMessage" class="text-gray-600 mb-6">
+                <!-- Message will be populated by JavaScript -->
+            </p>
+            <div class="flex justify-center gap-3">
+                <button id="confirmCancelBtn" onclick="closeConfirmModal()" 
+                        class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button id="confirmActionBtn" class="px-6 py-2 text-sm font-medium rounded-lg transition-colors">
+                    <!-- Button content will be populated by JavaScript -->
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Modal animation helper
+// Modal Functions
 function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const content = document.getElementById(modalId + 'Content');
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        modal.style.opacity = '1';
-        content.style.transform = 'scale(1)';
-    }, 10);
+    document.getElementById(modalId).classList.remove('hidden');
 }
 
 function hideModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const content = document.getElementById(modalId + 'Content');
-    modal.style.opacity = '0';
-    content.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        modal.classList.add('hidden');
-    }, 300);
+    document.getElementById(modalId).classList.add('hidden');
 }
 
 // Modal Functions
 function openAddModal() {
-    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle mr-2 text-white"></i><span>Add New Criteria</span>';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-teal-600 mr-2"></i><span>Add New Criteria</span>';
     document.getElementById('submitText').textContent = 'Add Criteria';
     document.getElementById('formAction').value = 'create';
     document.getElementById('criteriaForm').reset();
@@ -567,13 +491,12 @@ function editCriteria(id) {
         if (data.success) {
             const criteria = data.data;
             
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit mr-2 text-white"></i><span>Edit Criteria</span>';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-teal-600 mr-2"></i><span>Edit Criteria</span>';
             document.getElementById('submitText').textContent = 'Update Criteria';
             document.getElementById('formAction').value = 'update';
             document.getElementById('criteriaId').value = criteria.id;
             document.getElementById('criteria_name').value = criteria.criteria_name;
             document.getElementById('criteria_description').value = criteria.criteria_description || '';
-            // employee_type field removed - all are employees
             document.getElementById('minimum_months').value = criteria.minimum_months;
             document.getElementById('performance_rating_min').value = criteria.performance_rating_min;
             document.getElementById('attendance_percentage_min').value = criteria.attendance_percentage_min;
@@ -875,4 +798,3 @@ document.addEventListener('keydown', function(event) {
     }
 });
 </script>
-

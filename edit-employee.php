@@ -15,14 +15,16 @@ if (!$conn || mysqli_connect_error()) {
               </div>';
         exit();
     } else {
-        header('Location: ../505.php');
-        exit();
+        die('<div style="background: #fee; border: 1px solid #fcc; padding: 20px; margin: 20px; border-radius: 5px; color: #c33;">
+                <h2>Database Connection Error</h2>
+                <p>Unable to connect to the database. Please contact support.</p>
+             </div>');
     }
 }
 
 // Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: ../index.php');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
+    header('Location: index.php');
     exit();
 }
 
@@ -686,21 +688,20 @@ include 'includes/header.php';
                 <label class="block text-sm font-medium text-gray-700 mb-2">Employee Type <span class="text-red-500">*</span></label>
                 <select name="employee_type" required class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
                     <option value="">Select Type</option>
-                    <option value="staff" <?php echo $employee['employee_type'] === 'staff' ? 'selected' : ''; ?>>Staff</option>
-                    <option value="admin" <?php echo $employee['employee_type'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
-                    <option value="faculty" <?php echo $employee['employee_type'] === 'faculty' ? 'selected' : ''; ?>>Faculty</option>
+                    <option value="Staff" <?php echo $employee['employee_type'] === 'Staff' ? 'selected' : ''; ?>>Staff</option>
+                    <option value="Admin" <?php echo $employee['employee_type'] === 'Admin' ? 'selected' : ''; ?>>Admin</option>
+                    <option value="Nurse" <?php echo $employee['employee_type'] === 'Nurse' ? 'selected' : ''; ?>>Nurse</option>
                 </select>
             </div>
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Employment Type</label>
                 <select name="employment_type" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
-                    <option value="Full-time" <?php echo ($employee['employment_type'] ?? 'Full-time') === 'Full-time' ? 'selected' : ''; ?>>Full-time</option>
-                    <option value="Part-time" <?php echo ($employee['employment_type'] ?? '') === 'Part-time' ? 'selected' : ''; ?>>Part-time</option>
-                    <option value="Contract" <?php echo ($employee['employment_type'] ?? '') === 'Contract' ? 'selected' : ''; ?>>Contract</option>
-                    <option value="Temporary" <?php echo ($employee['employment_type'] ?? '') === 'Temporary' ? 'selected' : ''; ?>>Temporary</option>
-                    <option value="Probationary" <?php echo ($employee['employment_type'] ?? '') === 'Probationary' ? 'selected' : ''; ?>>Probationary</option>
-                    <option value="Casual" <?php echo ($employee['employment_type'] ?? '') === 'Casual' ? 'selected' : ''; ?>>Casual</option>
+                    <option value="Permanent" <?php echo ($employee['employment_type'] ?? 'Permanent') === 'Permanent' ? 'selected' : ''; ?>>Permanent</option>
+                    <option value="Casual/Project" <?php echo ($employee['employment_type'] ?? '') === 'Casual/Project' ? 'selected' : ''; ?>>Casual/Project</option>
+                    <option value="Casual Subsidy" <?php echo ($employee['employment_type'] ?? '') === 'Casual Subsidy' ? 'selected' : ''; ?>>Casual Subsidy</option>
+                    <option value="Job Order" <?php echo ($employee['employment_type'] ?? '') === 'Job Order' ? 'selected' : ''; ?>>Job Order</option>
+                    <option value="Contract of Service" <?php echo ($employee['employment_type'] ?? '') === 'Contract of Service' ? 'selected' : ''; ?>>Contract of Service</option>
                 </select>
             </div>
             

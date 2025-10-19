@@ -216,3 +216,4 @@ function get_organization_setting($conn, $key, $default = '') {
     return $default;
 }
 ?>
+

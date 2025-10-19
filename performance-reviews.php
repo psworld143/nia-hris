@@ -5,7 +5,7 @@ require_once 'includes/functions.php';
 require_once 'includes/id_encryption.php';
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])) {
     header('Location: index.php');
     exit();
 }
@@ -205,285 +205,302 @@ $status_options = ['draft', 'in_progress', 'completed', 'approved', 'rejected'];
 include 'includes/header.php';
 ?>
 
-<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
-            <div class="max-w-7xl mx-auto">
-                <!-- Header Section -->
-                <div class="mb-8">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900">Performance Reviews</h1>
-                            <p class="text-gray-600 mt-2">Manage and track employee performance evaluations</p>
-                        </div>
-                        <button onclick="openCreateModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
-                            <i class="fas fa-plus"></i>
-                            New Review
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Statistics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Total Reviews</p>
-                                <p class="text-3xl font-bold text-gray-900"><?php echo number_format($stats['total_reviews'] ?? 0); ?></p>
-                            </div>
-                            <div class="bg-blue-100 p-3 rounded-full">
-                                <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">In Progress</p>
-                                <p class="text-3xl font-bold text-yellow-600"><?php echo number_format($stats['in_progress_reviews'] ?? 0); ?></p>
-                            </div>
-                            <div class="bg-yellow-100 p-3 rounded-full">
-                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Completed</p>
-                                <p class="text-3xl font-bold text-green-600"><?php echo number_format($stats['completed_reviews'] ?? 0); ?></p>
-                            </div>
-                            <div class="bg-green-100 p-3 rounded-full">
-                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600">Average Rating</p>
-                                <p class="text-3xl font-bold text-indigo-600"><?php echo $stats['avg_rating'] ? number_format((float)$stats['avg_rating'], 2) : 'N/A'; ?></p>
-                            </div>
-                            <div class="bg-indigo-100 p-3 rounded-full">
-                                <i class="fas fa-star text-indigo-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Message Display -->
-                <?php if (!empty($message)): ?>
-                <div class="mb-6 p-4 rounded-lg <?php echo $message_type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'; ?>">
-                    <?php echo htmlspecialchars($message); ?>
-                </div>
-                <?php endif; ?>
-
-                <!-- Filters Section -->
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
-                    <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                            <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" 
-                                   placeholder="Search employees..." 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <option value="">All Status</option>
-                                <?php foreach ($status_options as $status): ?>
-                                <option value="<?php echo $status; ?>" <?php echo $filter_status === $status ? 'selected' : ''; ?>>
-                                    <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
-                            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <option value="">All Types</option>
-                                <?php foreach ($review_types as $type): ?>
-                                <option value="<?php echo $type; ?>" <?php echo $filter_type === $type ? 'selected' : ''; ?>>
-                                    <?php echo ucfirst(str_replace('_', ' ', $type)); ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                            <select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <option value="">All Departments</option>
-                                <?php foreach ($departments as $dept): ?>
-                                <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $filter_department === $dept ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($dept); ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        
-                        <div class="flex items-end gap-2">
-                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                                <i class="fas fa-search"></i> Filter
-                            </button>
-                            <a href="performance-reviews.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                                <i class="fas fa-times"></i> Clear
-                            </a>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Reviews Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900">Performance Reviews</h3>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Type</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <?php if (empty($reviews)): ?>
-                                <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                        <i class="fas fa-clipboard-list text-4xl mb-4 text-gray-300"></i>
-                                        <p class="text-lg">No performance reviews found</p>
-                                        <p class="text-sm">Create your first performance review to get started.</p>
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                <?php foreach ($reviews as $review): ?>
-                                <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                                                    <span class="text-sm font-medium text-green-800">
-                                                        <?php echo strtoupper(substr($review['first_name'], 0, 1) . substr($review['last_name'], 0, 1)); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    <?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?>
-                                                </div>
-                                                <div class="text-sm text-gray-500">
-                                                    <?php echo htmlspecialchars($review['position']); ?> - <?php echo htmlspecialchars($review['department']); ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            <?php echo ucfirst(str_replace('_', ' ', $review['review_type'])); ?>
-                                        </span>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <?php echo date('M j, Y', strtotime($review['review_period_start'])); ?> - 
-                                        <?php echo date('M j, Y', strtotime($review['review_period_end'])); ?>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <?php
-                                        $status_colors = [
-                                            'draft' => 'bg-gray-100 text-gray-800',
-                                            'in_progress' => 'bg-yellow-100 text-yellow-800',
-                                            'completed' => 'bg-green-100 text-green-800',
-                                            'approved' => 'bg-blue-100 text-blue-800',
-                                            'rejected' => 'bg-red-100 text-red-800'
-                                        ];
-                                        $status_color = $status_colors[$review['status']] ?? 'bg-gray-100 text-gray-800';
-                                        ?>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $status_color; ?>">
-                                            <?php echo ucfirst(str_replace('_', ' ', $review['status'])); ?>
-                                        </span>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <?php if ($review['overall_rating']): ?>
-                                        <div class="flex items-center">
-                                            <span class="text-lg font-semibold text-indigo-600"><?php echo number_format((float)$review['overall_rating'], 1); ?></span>
-                                            <span class="text-sm text-gray-500 ml-1">/ 5.0</span>
-                                        </div>
-                                        <?php else: ?>
-                                        <span class="text-gray-400">Not rated</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                                                <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo min(100, ($review['criteria_scored'] + $review['goals_set']) * 10); ?>%"></div>
-                                            </div>
-                                            <span class="text-xs text-gray-600">
-                                                <?php echo $review['criteria_scored']; ?> criteria, <?php echo $review['goals_set']; ?> goals
-                                            </span>
-                                        </div>
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex items-center gap-2">
-                                            <a href="conduct-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
-                                               class="text-green-600 hover:text-green-900 transition-colors duration-200">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="view-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
-                                               class="text-blue-600 hover:text-blue-900 transition-colors duration-200">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <?php if ($review['status'] === 'draft'): ?>
-                                            <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this review?')">
-                                                <input type="hidden" name="action" value="delete_review">
-                                                <input type="hidden" name="review_id" value="<?php echo $review['id']; ?>">
-                                                <button type="submit" class="text-red-600 hover:text-red-900 transition-colors duration-200">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-star mr-2"></i>Performance Reviews Management
+                </h2>
+                <p class="opacity-90">Manage and track employee performance evaluations</p>
             </div>
-        </main>
+            <div class="flex items-center gap-3">
+                <?php if (function_exists('getRoleBadge')): ?>
+                    <?php echo getRoleBadge($_SESSION['role']); ?>
+                <?php endif; ?>
+                <button onclick="openCreateModal()" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>New Review
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php if (!empty($message)): ?>
+    <div class="mb-4 p-4 rounded-lg <?php echo $message_type === 'success' ? 'bg-green-100 text-green-700 border border-green-400' : 'bg-red-100 text-red-700 border border-red-400'; ?>">
+        <i class="fas <?php echo $message_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'; ?> mr-2"></i>
+        <?php echo htmlspecialchars($message); ?>
+    </div>
+<?php endif; ?>
+
+<!-- Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Reviews</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo number_format($stats['total_reviews'] ?? 0); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">In Progress</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo number_format($stats['in_progress_reviews'] ?? 0); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Completed</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo number_format($stats['completed_reviews'] ?? 0); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-star text-indigo-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Avg Rating</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['avg_rating'] ? number_format((float)$stats['avg_rating'], 2) : 'N/A'; ?></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Filter Reviews</h3>
+        <a href="performance-reviews.php" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            <i class="fas fa-redo mr-1"></i>Reset Filters
+        </a>
+    </div>
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" 
+                   placeholder="Search employees..." 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">All Status</option>
+                <?php foreach ($status_options as $status): ?>
+                <option value="<?php echo $status; ?>" <?php echo $filter_status === $status ? 'selected' : ''; ?>>
+                    <?php echo ucfirst(str_replace('_', ' ', $status)); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
+            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">All Types</option>
+                <?php foreach ($review_types as $type): ?>
+                <option value="<?php echo $type; ?>" <?php echo $filter_type === $type ? 'selected' : ''; ?>>
+                    <?php echo ucfirst(str_replace('_', ' ', $type)); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+            <select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <option value="">All Departments</option>
+                <?php foreach ($departments as $dept): ?>
+                <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $filter_department === $dept ? 'selected' : ''; ?>>
+                    <?php echo htmlspecialchars($dept); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        <div class="flex items-end">
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-search mr-1"></i> Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Reviews Table -->
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Performance Reviews List</h3>
+        <span class="text-sm text-gray-500"><?php echo count($reviews); ?> review(s)</span>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200" id="reviewsTable">
+            <thead class="bg-gradient-to-r from-indigo-600 to-indigo-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Review Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Period</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Rating</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Progress</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (empty($reviews)): ?>
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-clipboard-list text-gray-400 text-3xl"></i>
+                            </div>
+                            <p class="text-lg font-medium text-gray-700">No performance reviews found</p>
+                            <p class="text-sm text-gray-500 mt-1">Create your first performance review to get started.</p>
+                            <button onclick="openCreateModal()" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                                <i class="fas fa-plus mr-2"></i>Create Review
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php else: ?>
+                <?php foreach ($reviews as $review): ?>
+                <tr class="hover:bg-indigo-50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                                <span class="text-sm font-semibold text-indigo-600">
+                                    <?php echo strtoupper(substr($review['first_name'], 0, 1) . substr($review['last_name'], 0, 1)); ?>
+                                </span>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    <?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?>
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    <?php echo htmlspecialchars($review['position']); ?> - <?php echo htmlspecialchars($review['department']); ?>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <?php echo ucfirst(str_replace('_', ' ', $review['review_type'])); ?>
+                        </span>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <?php echo date('M j, Y', strtotime($review['review_period_start'])); ?> - 
+                        <?php echo date('M j, Y', strtotime($review['review_period_end'])); ?>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <?php
+                        $status_colors = [
+                            'draft' => 'bg-gray-100 text-gray-800',
+                            'in_progress' => 'bg-yellow-100 text-yellow-800',
+                            'completed' => 'bg-green-100 text-green-800',
+                            'approved' => 'bg-blue-100 text-blue-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $status_color = $status_colors[$review['status']] ?? 'bg-gray-100 text-gray-800';
+                        ?>
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $status_color; ?>">
+                            <?php echo ucfirst(str_replace('_', ' ', $review['status'])); ?>
+                        </span>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <?php if ($review['overall_rating']): ?>
+                        <div class="flex items-center">
+                            <span class="text-lg font-bold text-indigo-600"><?php echo number_format((float)$review['overall_rating'], 1); ?></span>
+                            <span class="text-sm text-gray-500 ml-1">/ 5.0</span>
+                        </div>
+                        <?php else: ?>
+                        <span class="text-gray-400">Not rated</span>
+                        <?php endif; ?>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-20 bg-gray-200 rounded-full h-2 mr-2">
+                                <div class="bg-indigo-600 h-2 rounded-full" style="width: <?php echo min(100, ($review['criteria_scored'] + $review['goals_set']) * 10); ?>%"></div>
+                            </div>
+                            <span class="text-xs text-gray-600">
+                                <?php echo $review['criteria_scored'] + $review['goals_set']; ?> items
+                            </span>
+                        </div>
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex items-center gap-3">
+                            <a href="view-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
+                               class="text-indigo-600 hover:text-indigo-900" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="conduct-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
+                               class="text-blue-600 hover:text-blue-900" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <?php if ($review['status'] === 'draft'): ?>
+                            <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this review?')">
+                                <input type="hidden" name="action" value="delete_review">
+                                <input type="hidden" name="review_id" value="<?php echo $review['id']; ?>">
+                                <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <!-- Create Review Modal -->
 <div id="createModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-xl bg-white">
         <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Create New Performance Review</h3>
-                <button onclick="closeCreateModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-plus-circle text-indigo-600 mr-2"></i>Create New Performance Review
+                </h3>
+                <button onclick="closeCreateModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             
-            <form method="POST" class="space-y-4">
+            <form method="POST" class="space-y-5">
                 <input type="hidden" name="action" value="create_review">
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
-                    <select name="employee_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>Employee
+                    </label>
+                    <select name="employee_id" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                         <option value="">Select Employee</option>
                         <?php
                         $employees_query = "SELECT id, first_name, last_name, email, department, position FROM employees WHERE is_active = 1 ORDER BY first_name, last_name";
@@ -498,8 +515,10 @@ include 'includes/header.php';
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
-                    <select name="review_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-clipboard-check mr-2 text-indigo-600"></i>Review Type
+                    </label>
+                    <select name="review_type" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                         <option value="">Select Review Type</option>
                         <?php foreach ($review_types as $type): ?>
                         <option value="<?php echo $type; ?>">
@@ -511,26 +530,30 @@ include 'includes/header.php';
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Period Start</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-alt mr-2 text-indigo-600"></i>Period Start
+                        </label>
                         <input type="date" name="review_period_start" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Period End</label>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-calendar-check mr-2 text-indigo-600"></i>Period End
+                        </label>
                         <input type="date" name="review_period_end" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                     </div>
                 </div>
                 
-                <div class="flex justify-end gap-3 pt-4">
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                     <button type="button" onclick="closeCreateModal()" 
-                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors duration-200">
+                            class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
-                        Create Review
+                            class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Create Review
                     </button>
                 </div>
             </form>
@@ -554,4 +577,3 @@ document.getElementById('createModal').addEventListener('click', function(e) {
     }
 });
 </script>
-

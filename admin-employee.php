@@ -13,7 +13,7 @@ if (!$conn || mysqli_connect_errno()) {
 }
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     header('Location: index.php');
     exit();
 }
@@ -107,6 +107,8 @@ $employees_query = "SELECT e.*,
                            ed.profile_photo,
                            ed.employment_type,
                            d.name as department_name,
+                           d.icon as department_icon,
+                           d.color_theme as department_color,
                            rs.name as regularization_status,
                            rs.color as status_color,
                            er.date_of_hire,
@@ -345,14 +347,14 @@ include 'includes/header.php';
                     <!-- Department Info -->
                     <div class="mb-3 pb-3 border-b border-gray-100">
                         <div class="text-center">
-                            <?php if ($employee['department_icon'] && $employee['department_color']): ?>
+                            <?php if (($employee['department_icon'] ?? null) && ($employee['department_color'] ?? null)): ?>
                                 <div class="w-6 h-6 rounded flex items-center justify-center text-white text-xs mx-auto mb-1 shadow-sm" 
-                                     style="background-color: <?php echo $employee['department_color']; ?>">
-                                    <i class="<?php echo $employee['department_icon']; ?>"></i>
+                                     style="background-color: <?php echo htmlspecialchars($employee['department_color']); ?>">
+                                    <i class="<?php echo htmlspecialchars($employee['department_icon']); ?>"></i>
                                 </div>
                             <?php endif; ?>
-                            <p class="text-xs font-medium text-gray-700 px-1 leading-tight" title="<?php echo ($employee['department_name'] ?: $employee['department']) ?? 'No Department'; ?>">
-                                <?php echo ($employee['department_name'] ?: $employee['department']) ?? 'No Dept'; ?>
+                            <p class="text-xs font-medium text-gray-700 px-1 leading-tight" title="<?php echo htmlspecialchars(($employee['department_name'] ?: $employee['department']) ?? 'No Department'); ?>">
+                                <?php echo htmlspecialchars(($employee['department_name'] ?: $employee['department']) ?? 'No Dept'); ?>
                             </p>
                         </div>
                     </div>

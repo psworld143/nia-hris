@@ -3,8 +3,8 @@ session_start();
 require_once 'config/database.php';
 
 // Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: /seait/index.php?login=required&redirect=leave-management');
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
+    header('Location: index.php');
     exit();
 }
 
@@ -439,259 +439,201 @@ include 'includes/header.php';
 }
 </style>
 
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Leave Management</h1>
-        <button onclick="openCreateLeaveModal()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <i class="fas fa-plus"></i>
-            Add Employee Leave
-        </button>
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-calendar-alt mr-2"></i>Leave Management
+                </h2>
+                <p class="opacity-90">Manage and approve employee leave requests</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <?php if (function_exists('getRoleBadge')): ?>
+                    <?php echo getRoleBadge($_SESSION['role']); ?>
+                <?php endif; ?>
+                <button onclick="openCreateLeaveModal()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Employee Leave
+                </button>
+            </div>
+        </div>
     </div>
+</div>
 
-    <!-- Leave Management - Single Employee System -->
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Total Requests</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['employee']['total_requests'] ?? 0; ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Approved</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo ($stats['employee']['approved_by_head'] ?? 0) + ($stats['employee']['approved_by_hr'] ?? 0); ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Pending</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['employee']['pending'] ?? 0; ?></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+        <div class="flex items-center">
+            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <i class="fas fa-times-circle text-red-600 text-xl"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Rejected</p>
+                <p class="text-2xl font-bold text-gray-900"><?php echo $stats['employee']['rejected'] ?? 0; ?></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters & Leave Requests -->
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <!-- Filters Section -->
     <div class="mb-6">
-        <div class="border-b border-gray-200 pb-2">
-            <h2 class="text-lg font-semibold text-gray-800">
-                <i class="fas fa-calendar-alt text-green-600 mr-2"></i>Employee Leave Requests
-            </h2>
-        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-filter text-green-500 mr-2"></i>Filters
+        </h3>
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            
+            <div>
+                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-info-circle text-green-500 mr-1"></i>Status
+                </label>
+                <select name="status" id="status-filter" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+                    <option value="">All Status</option>
+                    <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                    <option value="approved_by_head" <?php echo $status_filter === 'approved_by_head' ? 'selected' : ''; ?>>Approved by Head</option>
+                    <option value="approved_by_hr" <?php echo $status_filter === 'approved_by_hr' ? 'selected' : ''; ?>>Approved by HR</option>
+                    <option value="rejected" <?php echo $status_filter === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                    <option value="cancelled" <?php echo $status_filter === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-building text-green-500 mr-1"></i>Department
+                </label>
+                <select name="department" id="department-filter" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+                    <option value="">All Departments</option>
+                    <?php foreach ($departments as $dept): ?>
+                    <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div>
+                <label for="date-from" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-calendar-day text-green-500 mr-1"></i>From Date
+                </label>
+                <input type="date" name="date_from" id="date-from" value="<?php echo htmlspecialchars($date_from ?? ''); ?>" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+            </div>
+            
+            <div>
+                <label for="date-to" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-calendar-check text-green-500 mr-1"></i>To Date
+                </label>
+                <input type="date" name="date_to" id="date-to" value="<?php echo htmlspecialchars($date_to ?? ''); ?>" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+            </div>
+            
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-search text-green-500 mr-1"></i>Search
+                </label>
+                <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name, ID..." class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+            </div>
+            
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex-1 font-semibold transition-colors">
+                    <i class="fas fa-search mr-2"></i>Filter
+                </button>
+                <a href="leave-management.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
     </div>
-
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                    <i class="fas fa-users text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Employee Requests</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['employee']['total_requests'] ?? 0; ?></p>
-                </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div class="text-green-600">Approved: <?php echo ($stats['employee']['approved_by_head'] ?? 0) + ($stats['employee']['approved_by_hr'] ?? 0); ?></div>
-                <div class="text-yellow-600">Pending: <?php echo $stats['employee']['pending'] ?? 0; ?></div>
-                <div class="text-red-600">Rejected: <?php echo $stats['employee']['rejected'] ?? 0; ?></div>
-                <div class="text-gray-600">Cancelled: <?php echo $stats['employee']['cancelled'] ?? 0; ?></div>
-            </div>
-        </div>
-        
-        
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                    <i class="fas fa-chalkboard-teacher text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Employee Requests</p>
-                    <p class="text-2xl font-semibold text-gray-900"><?php echo $stats['employee']['total_requests'] ?? 0; ?></p>
-                </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <div class="text-green-600">Approved: <?php echo ($stats['employee']['approved_by_head'] ?? 0) + ($stats['employee']['approved_by_hr'] ?? 0); ?></div>
-                <div class="text-yellow-600">Pending: <?php echo $stats['employee']['pending'] ?? 0; ?></div>
-                <div class="text-red-600">Rejected: <?php echo $stats['employee']['rejected'] ?? 0; ?></div>
-                <div class="text-gray-600">Cancelled: <?php echo $stats['employee']['cancelled'] ?? 0; ?></div>
-            </div>
-            <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                <i class="fas fa-info-circle mr-1"></i>
-                <strong>Note:</strong> Employee leave requests must be approved by their department head first before HR can approve them.
-            </div>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow mb-6">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Filters</h3>
-        </div>
-        <div class="p-6">
-            <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                
-                <div>
-                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" id="status-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">All Status</option>
-                        <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                        <option value="approved_by_head" <?php echo $status_filter === 'approved_by_head' ? 'selected' : ''; ?>>Approved by Head</option>
-                        <option value="approved_by_hr" <?php echo $status_filter === 'approved_by_hr' ? 'selected' : ''; ?>>Approved by HR</option>
-                        <option value="rejected" <?php echo $status_filter === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
-                        <option value="cancelled" <?php echo $status_filter === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                    <select name="department" id="department-filter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">All Departments</option>
-                        <?php foreach ($departments as $dept): ?>
-                        <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="date-from" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                    <input type="date" name="date_from" id="date-from" value="<?php echo htmlspecialchars($date_from ?? ''); ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-                
-                <div>
-                    <label for="date-to" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                    <input type="date" name="date_to" id="date-to" value="<?php echo htmlspecialchars($date_to ?? ''); ?>" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-                
-                <div>
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name, ID..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                </div>
-                
-                <div class="flex items-end space-x-2">
-                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md flex-1">
-                        <i class="fas fa-search mr-2"></i>Filter
-                    </button>
-                    <a href="leave-management.php" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
-                        <i class="fas fa-times"></i>
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    
     <!-- Leave Requests Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Leave Requests</h3>
-        </div>
-        
-        <!-- Desktop Table View -->
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Employee</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Leave Type</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Dates</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Days</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Status</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <?php if (empty($all_results)): ?>
-                    <tr>
-                        <td colspan="7" class="px-4 py-4 text-center text-gray-500">No leave requests found.</td>
-                    </tr>
-                    <?php else: ?>
-                        <?php foreach ($all_results as $leave): ?>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-4">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-8 w-8">
-                                        <div class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white font-semibold text-sm">
-                                            <?php echo substr($leave['first_name'] ?? '', 0, 1) . substr($leave['last_name'] ?? '', 0, 1); ?>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?></div>
-                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars($leave['department'] ?? ''); ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4">
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $leave['source_table'] === 'employee' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'; ?>">
-                                    <?php echo $leave['source_table'] === 'employee' ? 'Employee' : 'Employee'; ?>
-                                </span>
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-900"><?php echo htmlspecialchars($leave['leave_type_name'] ?? ''); ?></td>
-                            <td class="px-4 py-4 text-sm text-gray-900">
-                                <div><?php echo date('M j, Y', strtotime($leave['start_date'])); ?></div>
-                                <div class="text-gray-500 text-xs">to <?php echo date('M j, Y', strtotime($leave['end_date'])); ?></div>
-                            </td>
-                            <td class="px-4 py-4 text-sm text-gray-900"><?php echo htmlspecialchars($leave['total_days'] ?? ''); ?> days</td>
-                            <td class="px-4 py-4">
-                                <?php
-                                $status_colors = [
-                                    'pending' => 'bg-yellow-100 text-yellow-800',
-                                    'approved_by_head' => 'bg-blue-100 text-blue-800',
-                                    'approved_by_hr' => 'bg-green-100 text-green-800',
-                                    'rejected' => 'bg-red-100 text-red-800',
-                                    'cancelled' => 'bg-gray-100 text-gray-800'
-                                ];
-                                $status_text = [
-                                    'pending' => 'Pending',
-                                    'approved_by_head' => 'Approved by Head',
-                                    'approved_by_hr' => 'Approved by HR',
-                                    'rejected' => 'Rejected',
-                                    'cancelled' => 'Cancelled'
-                                ];
-                                $status = $leave['status'] ?? 'pending';
-                                ?>
-                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $status_colors[$status]; ?>">
-                                    <?php echo $status_text[$status]; ?>
-                                </span>
-                            </td>
-                            <td class="px-4 py-4 text-sm font-medium">
-                                <button onclick="viewLeaveDetails(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-500 hover:text-green-600 mr-2">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <?php 
-                                // Show approve/reject buttons for:
-                                // - Employee leave requests that are pending (direct HR approval)
-                                // - Employee leave requests that are approved by head (ready for HR approval)
-                                $can_approve = false;
-                                if ($leave['source_table'] === 'employee' && $leave['status'] === 'pending') {
-                                    $can_approve = true;
-                                } elseif ($leave['source_table'] === 'employee' && $leave['status'] === 'approved_by_head') {
-                                    $can_approve = true;
-                                }
-                                
-                                if ($can_approve): 
-                                ?>
-                                <button onclick="approveLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-600 hover:text-green-800 mr-2">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                                <button onclick="rejectLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-red-600 hover:text-red-800 mr-2">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                                <?php endif; ?>
-                                
-                                <!-- Secure Delete Button -->
-                                <button onclick="openSecureDeleteModal(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>', '<?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?>')" class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </button>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Mobile Card View -->
-        <div class="lg:hidden">
-            <?php if (empty($all_results)): ?>
-            <div class="p-6 text-center text-gray-500">No leave requests found.</div>
-            <?php else: ?>
-                <?php foreach ($all_results as $leave): ?>
-                <div class="p-4 border-b border-gray-200 hover:bg-gray-50">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10">
-                                <div class="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center text-white font-semibold">
-                                    <?php echo substr($leave['first_name'] ?? '', 0, 1) . substr($leave['last_name'] ?? '', 0, 1); ?>
-                                </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gradient-to-r from-green-600 to-green-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Leave Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Dates</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Days</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php if (empty($all_results)): ?>
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                <i class="fas fa-calendar-alt text-gray-400 text-3xl"></i>
                             </div>
-                            <div class="ml-3">
-                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?></div>
-                                <div class="text-sm text-gray-500"><?php echo htmlspecialchars($leave['department'] ?? ''); ?></div>
-                            </div>
+                            <p class="text-lg font-medium text-gray-700">No leave requests found</p>
+                            <p class="text-sm text-gray-500 mt-1">Try adjusting your filters or add a new leave request.</p>
                         </div>
-                        <div class="flex items-center space-x-2">
+                    </td>
+                </tr>
+                <?php else: ?>
+                    <?php foreach ($all_results as $leave): ?>
+                    <tr class="hover:bg-green-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                                    <span class="text-green-600 font-semibold">
+                                        <?php echo strtoupper(substr($leave['first_name'] ?? '', 0, 1) . substr($leave['last_name'] ?? '', 0, 1)); ?>
+                                    </span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?></div>
+                                    <div class="text-sm text-gray-500"><?php echo htmlspecialchars($leave['department'] ?? ''); ?></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $leave['source_table'] === 'employee' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'; ?>">
                                 <?php echo $leave['source_table'] === 'employee' ? 'Employee' : 'Employee'; ?>
                             </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900"><?php echo htmlspecialchars($leave['leave_type_name'] ?? ''); ?></td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div><?php echo date('M j, Y', strtotime($leave['start_date'])); ?></div>
+                            <div class="text-gray-500 text-xs">to <?php echo date('M j, Y', strtotime($leave['end_date'])); ?></div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900"><?php echo htmlspecialchars($leave['total_days'] ?? ''); ?> days</td>
+                        <td class="px-6 py-4">
                             <?php
                             $status_colors = [
                                 'pending' => 'bg-yellow-100 text-yellow-800',
@@ -712,58 +654,138 @@ include 'includes/header.php';
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $status_colors[$status]; ?>">
                                 <?php echo $status_text[$status]; ?>
                             </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewLeaveDetails(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-600 hover:text-green-900 mr-3">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <?php 
+                            // Show approve/reject buttons for:
+                            // - Employee leave requests that are pending (direct HR approval)
+                            // - Employee leave requests that are approved by head (ready for HR approval)
+                            $can_approve = false;
+                            if ($leave['source_table'] === 'employee' && $leave['status'] === 'pending') {
+                                $can_approve = true;
+                            } elseif ($leave['source_table'] === 'employee' && $leave['status'] === 'approved_by_head') {
+                                $can_approve = true;
+                            }
+                            
+                            if ($can_approve): 
+                            ?>
+                            <button onclick="approveLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-600 hover:text-green-800 mr-2">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button onclick="rejectLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-red-600 hover:text-red-800 mr-2">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                            <?php endif; ?>
+                            
+                            <!-- Secure Delete Button -->
+                            <button onclick="openSecureDeleteModal(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>', '<?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?>')" class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="lg:hidden">
+        <?php if (empty($all_results)): ?>
+        <div class="p-6 text-center text-gray-500">No leave requests found.</div>
+        <?php else: ?>
+            <?php foreach ($all_results as $leave): ?>
+            <div class="p-4 border-b border-gray-200 hover:bg-gray-50">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                            <div class="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center text-white font-semibold">
+                                <?php echo substr($leave['first_name'] ?? '', 0, 1) . substr($leave['last_name'] ?? '', 0, 1); ?>
+                            </div>
+                        </div>
+                        <div class="ml-3">
+                            <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?></div>
+                            <div class="text-sm text-gray-500"><?php echo htmlspecialchars($leave['department'] ?? ''); ?></div>
                         </div>
                     </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-3 text-sm">
-                        <div>
-                            <span class="text-gray-500">Leave Type:</span>
-                            <div class="font-medium"><?php echo htmlspecialchars($leave['leave_type_name'] ?? ''); ?></div>
-                        </div>
-                        <div>
-                            <span class="text-gray-500">Days:</span>
-                            <div class="font-medium"><?php echo htmlspecialchars($leave['total_days'] ?? ''); ?> days</div>
-                        </div>
-                        <div class="col-span-2">
-                            <span class="text-gray-500">Dates:</span>
-                            <div class="font-medium"><?php echo date('M j, Y', strtotime($leave['start_date'])); ?> to <?php echo date('M j, Y', strtotime($leave['end_date'])); ?></div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex space-x-2">
-                        <button onclick="viewLeaveDetails(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-500 hover:text-green-600 text-sm">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        <?php 
-                        // Show approve/reject buttons for:
-                        // - Employee leave requests that are pending
-                        // - Employee leave requests that are approved by head (ready for HR approval)
-                        $can_approve = false;
-                        if ($leave['source_table'] === 'employee' && $leave['status'] === 'pending') {
-                            $can_approve = true;
-                        } elseif ($leave['source_table'] === 'employee' && $leave['status'] === 'approved_by_head') {
-                            $can_approve = true;
-                        }
-                        
-                        if ($can_approve): 
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $leave['source_table'] === 'employee' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'; ?>">
+                            <?php echo $leave['source_table'] === 'employee' ? 'Employee' : 'Employee'; ?>
+                        </span>
+                        <?php
+                        $status_colors = [
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'approved_by_head' => 'bg-blue-100 text-blue-800',
+                            'approved_by_hr' => 'bg-green-100 text-green-800',
+                            'rejected' => 'bg-red-100 text-red-800',
+                            'cancelled' => 'bg-gray-100 text-gray-800'
+                        ];
+                        $status_text = [
+                            'pending' => 'Pending',
+                            'approved_by_head' => 'Approved by Head',
+                            'approved_by_hr' => 'Approved by HR',
+                            'rejected' => 'Rejected',
+                            'cancelled' => 'Cancelled'
+                        ];
+                        $status = $leave['status'] ?? 'pending';
                         ?>
-                        <button onclick="approveLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-600 hover:text-green-800 text-sm">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button onclick="rejectLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-red-600 hover:text-red-800 text-sm">
-                            <i class="fas fa-times"></i> Reject
-                        </button>
-                        <?php endif; ?>
-                        
-                        <!-- Secure Delete Button (Mobile) -->
-                        <button onclick="openSecureDeleteModal(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>', '<?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?>')" class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200 text-sm">
-                            <i class="fas fa-trash-alt"></i> Delete
-                        </button>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?php echo $status_colors[$status]; ?>">
+                            <?php echo $status_text[$status]; ?>
+                        </span>
                     </div>
                 </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-3 text-sm">
+                    <div>
+                        <span class="text-gray-500">Leave Type:</span>
+                        <div class="font-medium"><?php echo htmlspecialchars($leave['leave_type_name'] ?? ''); ?></div>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Days:</span>
+                        <div class="font-medium"><?php echo htmlspecialchars($leave['total_days'] ?? ''); ?> days</div>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-gray-500">Dates:</span>
+                        <div class="font-medium"><?php echo date('M j, Y', strtotime($leave['start_date'])); ?> to <?php echo date('M j, Y', strtotime($leave['end_date'])); ?></div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button onclick="viewLeaveDetails(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-500 hover:text-green-600 text-sm">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <?php 
+                    // Show approve/reject buttons for:
+                    // - Employee leave requests that are pending
+                    // - Employee leave requests that are approved by head (ready for HR approval)
+                    $can_approve = false;
+                    if ($leave['source_table'] === 'employee' && $leave['status'] === 'pending') {
+                        $can_approve = true;
+                    } elseif ($leave['source_table'] === 'employee' && $leave['status'] === 'approved_by_head') {
+                        $can_approve = true;
+                    }
+                    
+                    if ($can_approve): 
+                    ?>
+                    <button onclick="approveLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-green-600 hover:text-green-800 text-sm">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button onclick="rejectLeave(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>')" class="text-red-600 hover:text-red-800 text-sm">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                    <?php endif; ?>
+                    
+                    <!-- Secure Delete Button (Mobile) -->
+                    <button onclick="openSecureDeleteModal(<?php echo $leave['id']; ?>, '<?php echo $leave['source_table']; ?>', '<?php echo htmlspecialchars(($leave['first_name'] ?? '') . ' ' . ($leave['last_name'] ?? '')); ?>')" class="text-red-700 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200 text-sm">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -2111,4 +2133,5 @@ document.getElementById('secureDeleteForm').addEventListener('submit', function(
     });
 });
 </script>
+
 

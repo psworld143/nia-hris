@@ -90,7 +90,7 @@ try {
     }
 
     // Validate employee type
-    $valid_employee_types = ['staff', 'admin'];
+    $valid_employee_types = ['Staff', 'Admin', 'Nurse'];
     if (!in_array($employee_type, $valid_employee_types)) {
         echo json_encode([
             'success' => false,
