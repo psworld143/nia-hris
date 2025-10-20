@@ -463,7 +463,7 @@ include 'includes/header.php';
 
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
@@ -475,7 +475,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -487,7 +487,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-clock text-yellow-600 text-xl"></i>
@@ -499,7 +499,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-times-circle text-red-600 text-xl"></i>

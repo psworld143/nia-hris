@@ -123,7 +123,7 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl shadow-lg p-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold mb-2">
@@ -135,7 +135,7 @@ include 'includes/header.php';
                 <?php if (function_exists('getRoleBadge')): ?>
                     <?php echo getRoleBadge($_SESSION['role']); ?>
                 <?php endif; ?>
-                <button onclick="openAddModal()" class="bg-white text-teal-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                <button onclick="openAddModal()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-plus mr-2"></i>Add New Criteria
                 </button>
             </div>
@@ -145,7 +145,7 @@ include 'includes/header.php';
 
 <!-- Statistics -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-list-check text-blue-600 text-xl"></i>
@@ -157,7 +157,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-users text-purple-600 text-xl"></i>
@@ -169,7 +169,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -191,7 +191,7 @@ include 'includes/header.php';
     
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gradient-to-r from-teal-600 to-teal-700">
+            <thead class="bg-gradient-to-r from-green-600 to-green-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Criteria Name</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Type</th>
@@ -212,7 +212,7 @@ include 'includes/header.php';
                             </div>
                             <p class="text-lg font-medium text-gray-700">No regularization criteria found</p>
                             <p class="text-sm text-gray-500 mt-1">Create your first criteria to get started.</p>
-                            <button onclick="openAddModal()" class="mt-4 bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700">
+                            <button onclick="openAddModal()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
                                 <i class="fas fa-plus mr-2"></i>Add Criteria
                             </button>
                         </div>
@@ -220,7 +220,7 @@ include 'includes/header.php';
                 </tr>
                 <?php else: ?>
                 <?php foreach ($all_criteria as $criteria): ?>
-                <tr class="hover:bg-teal-50 transition-colors">
+                <tr class="hover:bg-green-50 transition-colors">
                     <td class="px-6 py-4">
                         <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($criteria['criteria_name']); ?></div>
                         <div class="text-sm text-gray-500"><?php echo htmlspecialchars(substr($criteria['criteria_description'], 0, 50)) . (strlen($criteria['criteria_description']) > 50 ? '...' : ''); ?></div>
@@ -253,7 +253,7 @@ include 'includes/header.php';
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex items-center gap-3">
-                            <button onclick="viewCriteria(<?php echo $criteria['id']; ?>)" class="text-teal-600 hover:text-teal-900" title="View">
+                            <button onclick="viewCriteria(<?php echo $criteria['id']; ?>)" class="text-green-600 hover:text-green-900" title="View">
                                 <i class="fas fa-eye"></i>
                             </button>
                             <button onclick="editCriteria(<?php echo $criteria['id']; ?>)" class="text-blue-600 hover:text-blue-900" title="Edit">
@@ -281,7 +281,7 @@ include 'includes/header.php';
         <div class="mt-3">
             <div class="flex items-center justify-between mb-6">
                 <h3 id="modalTitle" class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-plus-circle text-teal-600 mr-2"></i>
+                    <i class="fas fa-plus-circle text-green-600 mr-2"></i>
                     <span>Add New Criteria</span>
                 </h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -298,60 +298,60 @@ include 'includes/header.php';
                     <!-- Criteria Name -->
                     <div class="md:col-span-2">
                         <label for="criteria_name" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-tag text-teal-600 mr-2"></i>Criteria Name <span class="text-red-500">*</span>
+                            <i class="fas fa-tag text-green-600 mr-2"></i>Criteria Name <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="criteria_name" name="criteria_name" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="Enter criteria name">
                     </div>
                     
                     <!-- Minimum Months -->
                     <div>
                         <label for="minimum_months" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-calendar-alt text-teal-600 mr-2"></i>Minimum Months <span class="text-red-500">*</span>
+                            <i class="fas fa-calendar-alt text-green-600 mr-2"></i>Minimum Months <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="minimum_months" name="minimum_months" min="0" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="0">
                     </div>
                     
                     <!-- Performance Rating -->
                     <div>
                         <label for="performance_rating_min" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-star text-teal-600 mr-2"></i>Min Performance <span class="text-red-500">*</span>
+                            <i class="fas fa-star text-green-600 mr-2"></i>Min Performance <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="performance_rating_min" name="performance_rating_min" min="0" max="5" step="0.1" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="0.0">
                     </div>
                     
                     <!-- Attendance Percentage -->
                     <div>
                         <label for="attendance_percentage_min" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-percentage text-teal-600 mr-2"></i>Min Attendance % <span class="text-red-500">*</span>
+                            <i class="fas fa-percentage text-green-600 mr-2"></i>Min Attendance % <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="attendance_percentage_min" name="attendance_percentage_min" min="0" max="100" step="0.01" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="0.00">
                     </div>
                     
                     <!-- Disciplinary Issues -->
                     <div>
                         <label for="disciplinary_issues_max" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-exclamation-triangle text-teal-600 mr-2"></i>Max Disciplinary
+                            <i class="fas fa-exclamation-triangle text-green-600 mr-2"></i>Max Disciplinary
                         </label>
                         <input type="number" id="disciplinary_issues_max" name="disciplinary_issues_max" min="0" 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="0">
                     </div>
                     
                     <!-- Evaluation Score -->
                     <div>
                         <label for="evaluation_score_min" class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-chart-line text-teal-600 mr-2"></i>Min Evaluation Score
+                            <i class="fas fa-chart-line text-green-600 mr-2"></i>Min Evaluation Score
                         </label>
                         <input type="number" id="evaluation_score_min" name="evaluation_score_min" min="0" max="100" step="0.01" 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" 
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent" 
                                placeholder="0.00">
                     </div>
                     
@@ -359,9 +359,9 @@ include 'includes/header.php';
                     <div class="md:col-span-2">
                         <label class="flex items-center cursor-pointer">
                             <input type="checkbox" id="training_completion_required" name="training_completion_required" 
-                                   class="w-5 h-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer">
+                                   class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer">
                             <span class="ml-3 text-sm font-semibold text-gray-700">
-                                <i class="fas fa-graduation-cap text-teal-600 mr-2"></i>Training Completion Required
+                                <i class="fas fa-graduation-cap text-green-600 mr-2"></i>Training Completion Required
                             </span>
                         </label>
                     </div>
@@ -370,20 +370,20 @@ include 'includes/header.php';
                 <!-- Description -->
                 <div>
                     <label for="criteria_description" class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-align-left text-teal-600 mr-2"></i>Description
+                        <i class="fas fa-align-left text-green-600 mr-2"></i>Description
                     </label>
                     <textarea id="criteria_description" name="criteria_description" rows="3" 
-                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none" 
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
                               placeholder="Enter criteria description..."></textarea>
                 </div>
                 
                 <!-- Additional Requirements -->
                 <div>
                     <label for="additional_requirements" class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-list-check text-teal-600 mr-2"></i>Additional Requirements
+                        <i class="fas fa-list-check text-green-600 mr-2"></i>Additional Requirements
                     </label>
                     <textarea id="additional_requirements" name="additional_requirements" rows="3" 
-                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none" 
+                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
                               placeholder="Enter any additional requirements..."></textarea>
                 </div>
                 
@@ -394,7 +394,7 @@ include 'includes/header.php';
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="px-6 py-2 text-sm font-medium text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-colors">
+                            class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-save mr-2"></i>
                         <span id="submitText">Add Criteria</span>
                     </button>
@@ -410,7 +410,7 @@ include 'includes/header.php';
         <div class="mt-3">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-info-circle text-teal-600 mr-2"></i>Criteria Details
+                    <i class="fas fa-info-circle text-green-600 mr-2"></i>Criteria Details
                 </h3>
                 <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i class="fas fa-times text-xl"></i>
@@ -470,7 +470,7 @@ function hideModal(modalId) {
 
 // Modal Functions
 function openAddModal() {
-    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-teal-600 mr-2"></i><span>Add New Criteria</span>';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle text-green-600 mr-2"></i><span>Add New Criteria</span>';
     document.getElementById('submitText').textContent = 'Add Criteria';
     document.getElementById('formAction').value = 'create';
     document.getElementById('criteriaForm').reset();
@@ -491,7 +491,7 @@ function editCriteria(id) {
         if (data.success) {
             const criteria = data.data;
             
-            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-teal-600 mr-2"></i><span>Edit Criteria</span>';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit text-green-600 mr-2"></i><span>Edit Criteria</span>';
             document.getElementById('submitText').textContent = 'Update Criteria';
             document.getElementById('formAction').value = 'update';
             document.getElementById('criteriaId').value = criteria.id;
@@ -527,13 +527,13 @@ function viewCriteria(id) {
             
             const content = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border-l-4 border-blue-500">
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-tag text-blue-500 mr-2"></i>Criteria Name
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.criteria_name}</p>
                     </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg border-l-4 border-purple-500">
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-user-tie text-purple-500 mr-2"></i>Employee Type
                         </label>
@@ -541,39 +541,39 @@ function viewCriteria(id) {
                             <i class="fas fa-user-tie mr-2"></i>Employee
                         </span>
                     </div>
-                    <div class="bg-gradient-to-br from-green-50 to-teal-50 p-4 rounded-lg border-l-4 border-green-500">
+                    <div class="bg-gradient-to-br from-green-50 to-teal-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-calendar-alt text-green-500 mr-2"></i>Minimum Months
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.minimum_months} months</p>
                     </div>
-                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-lg border-l-4 border-yellow-500">
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-star text-yellow-500 mr-2"></i>Performance Rating
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.performance_rating_min}/5.0</p>
                     </div>
-                    <div class="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-lg border-l-4 border-cyan-500">
+                    <div class="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-percentage text-cyan-500 mr-2"></i>Attendance Percentage
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.attendance_percentage_min}%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-red-50 to-pink-50 p-4 rounded-lg border-l-4 border-red-500">
+                    <div class="bg-gradient-to-br from-red-50 to-pink-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Max Disciplinary Issues
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.disciplinary_issues_max}</p>
                     </div>
-                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-lg border-l-4 border-indigo-500">
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                             <i class="fas fa-chart-line text-indigo-500 mr-2"></i>Evaluation Score
                         </label>
                         <p class="text-lg font-bold text-gray-900">${criteria.evaluation_score_min}</p>
                     </div>
-                    <div class="bg-gradient-to-br from-teal-50 to-green-50 p-4 rounded-lg border-l-4 border-teal-500">
+                    <div class="bg-gradient-to-br from-teal-50 to-green-50 p-4 rounded-lg ">
                         <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
-                            <i class="fas fa-graduation-cap text-teal-500 mr-2"></i>Training Required
+                            <i class="fas fa-graduation-cap text-green-500 mr-2"></i>Training Required
                         </label>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${criteria.training_completion_required == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
                             <i class="fas ${criteria.training_completion_required == 1 ? 'fa-check' : 'fa-times'} mr-2"></i>
@@ -582,7 +582,7 @@ function viewCriteria(id) {
                     </div>
                 </div>
                 ${criteria.criteria_description ? `
-                <div class="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg border-l-4 border-gray-500 mt-6">
+                <div class="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg  mt-6">
                     <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                         <i class="fas fa-align-left text-gray-500 mr-2"></i>Description
                     </label>
@@ -590,7 +590,7 @@ function viewCriteria(id) {
                 </div>
                 ` : ''}
                 ${criteria.additional_requirements ? `
-                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-lg border-l-4 border-amber-500 mt-6">
+                <div class="bg-gradient-to-br from-amber-50 to-yellow-50 p-4 rounded-lg  mt-6">
                     <label class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide flex items-center">
                         <i class="fas fa-list-check text-amber-500 mr-2"></i>Additional Requirements
                     </label>

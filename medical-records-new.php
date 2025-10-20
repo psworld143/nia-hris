@@ -132,7 +132,7 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold mb-2">
@@ -161,10 +161,10 @@ include 'includes/header.php';
 
 <!-- Statistics -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                <i class="fas fa-users text-green-600 text-xl"></i>
+                <i class="fas fa-users text-purple-600 text-xl"></i>
             </div>
             <div>
                 <p class="text-sm text-gray-600">Total Employees</p>
@@ -173,7 +173,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 ">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-allergies text-red-600 text-xl"></i>
@@ -185,7 +185,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 ">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-pills text-blue-600 text-xl"></i>
@@ -197,7 +197,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 ">
+    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-stethoscope text-green-600 text-xl"></i>
@@ -213,7 +213,7 @@ include 'includes/header.php';
 <!-- Filters -->
 <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">
-        <i class="fas fa-filter text-green-500 mr-2"></i>Filters
+        <i class="fas fa-filter text-purple-500 mr-2"></i>Filters
     </h3>
     <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
@@ -222,14 +222,14 @@ include 'includes/header.php';
             </label>
             <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" 
                    placeholder="Name or ID..." 
-                   class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                   class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
         </div>
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
                 <i class="fas fa-building text-purple-500 mr-1"></i>Department
             </label>
             <select name="department" 
-                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                 <option value="">All Departments</option>
                 <?php foreach ($departments as $dept): ?>
                 <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>>
@@ -239,7 +239,7 @@ include 'includes/header.php';
             </select>
         </div>
         <div class="flex items-end gap-2">
-            <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold">
+            <button type="submit" class="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-semibold">
                 <i class="fas fa-search mr-2"></i>Filter
             </button>
             <a href="medical-records.php" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
@@ -257,7 +257,7 @@ include 'includes/header.php';
     
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200" id="medicalTable">
-            <thead class="bg-gradient-to-r from-green-600 to-green-700">
+            <thead class="bg-gradient-to-r from-purple-600 to-purple-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Blood Type</th>
@@ -283,11 +283,11 @@ include 'includes/header.php';
                 </tr>
                 <?php else: ?>
                 <?php foreach ($employees as $emp): ?>
-                <tr class="hover:bg-green-50 transition-colors">
+                <tr class="hover:bg-purple-50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                                <span class="text-green-600 font-semibold">
+                                <span class="text-purple-600 font-semibold">
                                     <?php echo strtoupper(substr($emp['first_name'], 0, 1) . substr($emp['last_name'], 0, 1)); ?>
                                 </span>
                             </div>
@@ -330,7 +330,7 @@ include 'includes/header.php';
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button onclick="viewEmployeeMedical(<?php echo $emp['id']; ?>)" 
-                                class="text-green-600 hover:text-green-900 mr-3">
+                                class="text-purple-600 hover:text-purple-900 mr-3">
                             <i class="fas fa-eye"></i> View
                         </button>
                         <?php if ($can_update): ?>
@@ -353,7 +353,7 @@ include 'includes/header.php';
     <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-2xl rounded-xl bg-white mb-10">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-2xl font-bold text-gray-900">
-                <i class="fas fa-edit text-green-600 mr-2"></i>Edit Medical Record
+                <i class="fas fa-edit text-purple-600 mr-2"></i>Edit Medical Record
             </h3>
             <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
                 <i class="fas fa-times"></i>
@@ -377,7 +377,7 @@ include 'includes/header.php';
                         <i class="fas fa-tint text-red-500 mr-1"></i>Blood Type
                     </label>
                     <select name="blood_type" id="edit_blood_type"
-                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                         <option value="">Select...</option>
                         <option value="O+">O+</option>
                         <option value="O-">O-</option>
@@ -395,7 +395,7 @@ include 'includes/header.php';
                         <i class="fas fa-calendar-check text-blue-500 mr-1"></i>Last Medical Checkup
                     </label>
                     <input type="date" name="last_checkup" id="edit_last_checkup"
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
 
                 <div class="md:col-span-2">
@@ -403,7 +403,7 @@ include 'includes/header.php';
                         <i class="fas fa-file-medical text-yellow-500 mr-1"></i>Medical Conditions
                     </label>
                     <textarea name="medical_conditions" id="edit_medical_conditions" rows="3"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                               placeholder="List any medical conditions"></textarea>
                 </div>
 
@@ -412,7 +412,7 @@ include 'includes/header.php';
                         <i class="fas fa-allergies text-orange-500 mr-1"></i>Allergies
                     </label>
                     <textarea name="allergies" id="edit_allergies" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                               placeholder="List any allergies"></textarea>
                 </div>
 
@@ -421,7 +421,7 @@ include 'includes/header.php';
                         <i class="fas fa-pills text-purple-500 mr-1"></i>Current Medications
                     </label>
                     <textarea name="medications" id="edit_medications" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                               placeholder="List current medications and dosages"></textarea>
                 </div>
 
@@ -430,7 +430,7 @@ include 'includes/header.php';
                         <i class="fas fa-user-shield text-green-500 mr-1"></i>Emergency Contact Name
                     </label>
                     <input type="text" name="emergency_contact" id="edit_emergency_contact"
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
 
                 <div>
@@ -438,7 +438,7 @@ include 'includes/header.php';
                         <i class="fas fa-phone text-green-500 mr-1"></i>Emergency Contact Number
                     </label>
                     <input type="text" name="emergency_phone" id="edit_emergency_phone"
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 </div>
 
                 <div class="md:col-span-2">
@@ -446,7 +446,7 @@ include 'includes/header.php';
                         <i class="fas fa-notes-medical text-blue-500 mr-1"></i>Medical Notes
                     </label>
                     <textarea name="notes" id="edit_notes" rows="3"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                               placeholder="Additional medical notes"></textarea>
                 </div>
             </div>
@@ -457,7 +457,7 @@ include 'includes/header.php';
                     <i class="fas fa-times mr-2"></i>Cancel
                 </button>
                 <button type="submit" 
-                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                        class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                     <i class="fas fa-save mr-2"></i>Save Changes
                 </button>
             </div>
@@ -470,7 +470,7 @@ include 'includes/header.php';
     <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-2xl rounded-xl bg-white mb-10">
         <div class="flex items-center justify-between mb-6">
             <h3 class="text-2xl font-bold text-gray-900">
-                <i class="fas fa-heartbeat text-green-600 mr-2"></i>Medical Records & History
+                <i class="fas fa-heartbeat text-purple-600 mr-2"></i>Medical Records & History
             </h3>
             <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
                 <i class="fas fa-times"></i>
@@ -479,203 +479,10 @@ include 'includes/header.php';
 
         <div id="medicalHistoryContent">
             <div class="text-center py-8">
-                <i class="fas fa-spinner fa-spin text-4xl text-green-600"></i>
+                <i class="fas fa-spinner fa-spin text-4xl text-purple-600"></i>
                 <p class="text-gray-600 mt-4">Loading medical records...</p>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- Add Medical History Modal -->
-<div id="addMedicalHistoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[60]">
-    <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-2xl rounded-xl bg-white mb-10">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-2xl font-bold text-gray-900">
-                <i class="fas fa-plus-circle text-red-600 mr-2"></i>Add Medical History Record
-            </h3>
-            <button onclick="closeAddMedicalHistoryModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <form id="addMedicalHistoryForm" class="space-y-4">
-            <input type="hidden" name="employee_id" id="add_employee_id">
-            
-            <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
-                <p class="text-sm text-purple-800">
-                    <i class="fas fa-user mr-2"></i>
-                    <strong id="add_employee_name"></strong> (<span id="add_employee_id_display"></span>)
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Record Date -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-calendar text-red-500 mr-1"></i>Record Date *
-                    </label>
-                    <input type="date" name="record_date" required 
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                </div>
-
-                <!-- Record Type -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-tags text-red-500 mr-1"></i>Record Type *
-                    </label>
-                    <select name="record_type" required 
-                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                        <option value="checkup">Checkup</option>
-                        <option value="diagnosis">Diagnosis</option>
-                        <option value="treatment">Treatment</option>
-                        <option value="vaccination">Vaccination</option>
-                        <option value="lab_test">Lab Test</option>
-                        <option value="consultation">Consultation</option>
-                        <option value="emergency">Emergency</option>
-                        <option value="follow_up">Follow-up</option>
-                    </select>
-                </div>
-
-                <!-- Chief Complaint -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-comment-medical text-red-500 mr-1"></i>Chief Complaint
-                    </label>
-                    <input type="text" name="chief_complaint" 
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                           placeholder="Main reason for visit">
-                </div>
-
-                <!-- Diagnosis -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-stethoscope text-red-500 mr-1"></i>Diagnosis
-                    </label>
-                    <textarea name="diagnosis" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                              placeholder="Medical diagnosis"></textarea>
-                </div>
-
-                <!-- Treatment -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-procedures text-red-500 mr-1"></i>Treatment
-                    </label>
-                    <textarea name="treatment" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                              placeholder="Treatment provided"></textarea>
-                </div>
-
-                <!-- Medication -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-pills text-red-500 mr-1"></i>Medication Prescribed
-                    </label>
-                    <textarea name="medication_prescribed" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                              placeholder="Medications and dosage"></textarea>
-                </div>
-
-                <!-- Vital Signs Section -->
-                <div class="md:col-span-2 border-t pt-4">
-                    <h4 class="font-semibold text-gray-700 mb-3">
-                        <i class="fas fa-heartbeat text-red-500 mr-2"></i>Vital Signs
-                    </h4>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Blood Pressure</label>
-                            <input type="text" name="blood_pressure" placeholder="120/80"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Heart Rate (bpm)</label>
-                            <input type="number" name="heart_rate" placeholder="72"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Temperature (°C)</label>
-                            <input type="number" step="0.1" name="temperature" placeholder="36.5"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Respiratory Rate</label>
-                            <input type="number" name="respiratory_rate" placeholder="16"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
-                            <input type="number" step="0.1" name="weight" placeholder="65"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Height (cm)</label>
-                            <input type="number" name="height" placeholder="165"
-                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Doctor Name -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-user-md text-red-500 mr-1"></i>Doctor Name
-                    </label>
-                    <input type="text" name="doctor_name" 
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                           placeholder="Dr. Juan Dela Cruz">
-                </div>
-
-                <!-- Clinic/Hospital -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-hospital text-red-500 mr-1"></i>Clinic/Hospital
-                    </label>
-                    <input type="text" name="clinic_hospital" 
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                           placeholder="NIA Health Center">
-                </div>
-
-                <!-- Lab Results -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-vial text-red-500 mr-1"></i>Lab Results
-                    </label>
-                    <textarea name="lab_results" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                              placeholder="Laboratory test results"></textarea>
-                </div>
-
-                <!-- Follow-up Date -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-calendar-check text-red-500 mr-1"></i>Follow-up Date
-                    </label>
-                    <input type="date" name="follow_up_date" 
-                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                </div>
-
-                <!-- Notes -->
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-notes-medical text-red-500 mr-1"></i>Additional Notes
-                    </label>
-                    <textarea name="notes" rows="2"
-                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                              placeholder="Any additional observations or notes"></textarea>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 pt-6 border-t">
-                <button type="button" onclick="closeAddMedicalHistoryModal()" 
-                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
-                    <i class="fas fa-times mr-2"></i>Cancel
-                </button>
-                <button type="submit" 
-                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-save mr-2"></i>Save Record
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -718,80 +525,7 @@ function viewEmployeeMedical(employeeId) {
 function closeViewModal() {
     document.getElementById('viewMedicalModal').classList.add('hidden');
 }
-
-// Function to open add medical history modal
-// This function is called from the AJAX-loaded content
-var currentEmployeeForHistory = null;
-
-function openAddHistoryModalForEmployee(employeeId, employeeName, employeeIdDisplay) {
-    // Store employee info
-    if (typeof employeeId === 'object') {
-        // If passed as object from get-medical-history.php
-        currentEmployeeForHistory = employeeId;
-    } else {
-        // If passed as separate parameters
-        currentEmployeeForHistory = {
-            id: employeeId,
-            name: employeeName,
-            employee_id: employeeIdDisplay
-        };
-    }
-    
-    // Close view modal
-    closeViewModal();
-    
-    // Set employee info in add modal
-    document.getElementById('add_employee_id').value = currentEmployeeForHistory.id;
-    document.getElementById('add_employee_name').textContent = currentEmployeeForHistory.name || employeeName;
-    document.getElementById('add_employee_id_display').textContent = currentEmployeeForHistory.employee_id || employeeIdDisplay;
-    
-    // Set default date to today
-    document.querySelector('#addMedicalHistoryForm [name="record_date"]').value = new Date().toISOString().split('T')[0];
-    
-    // Open add modal
-    document.getElementById('addMedicalHistoryModal').classList.remove('hidden');
-}
-
-function closeAddMedicalHistoryModal() {
-    document.getElementById('addMedicalHistoryModal').classList.add('hidden');
-    document.getElementById('addMedicalHistoryForm').reset();
-}
-
-// Handle add medical history form submission
-document.getElementById('addMedicalHistoryForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    
-    // Disable button and show loading
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
-    
-    fetch('add-medical-history.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            alert('Medical history record added successfully!');
-            // Close modal
-            closeAddMedicalHistoryModal();
-            // Reload page to show updated data
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.message);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        alert('Error adding medical history record. Please try again.');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    });
-});
 </script>
+
+<?php include 'includes/footer.php'; ?>
+

@@ -86,7 +86,7 @@ include 'includes/header.php';
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+        <div class="bg-white rounded-lg shadow-md p-6 ">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-green-100 text-green-600">
                     <i class="fas fa-user-tie text-xl"></i>
@@ -98,7 +98,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
+        <div class="bg-white rounded-lg shadow-md p-6 ">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-purple-100 text-purple-600">
                     <i class="fas fa-building text-xl"></i>
@@ -110,7 +110,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+        <div class="bg-white rounded-lg shadow-md p-6 ">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600">
                     <i class="fas fa-users text-xl"></i>
@@ -122,7 +122,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
+        <div class="bg-white rounded-lg shadow-md p-6 ">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-orange-100 text-orange-600">
                     <i class="fas fa-calendar-alt text-xl"></i>

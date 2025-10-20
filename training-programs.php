@@ -36,7 +36,7 @@ if (!empty($missing_tables)) {
                 Required training system tables are missing. Click the button below to migrate the complete training system from SEAIT website.
             </p>
             
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+            <div class="bg-blue-50  p-4 mb-6 text-left">
                 <h3 class="font-semibold text-blue-900 mb-2">What will be migrated:</h3>
                 <ul class="text-blue-800 space-y-1 ml-4">
                     <li>✓ Training & seminar management tables (trainings_seminars)</li>
@@ -47,7 +47,7 @@ if (!empty($missing_tables)) {
                 </ul>
             </div>
             
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 text-left">
+            <div class="bg-red-50  p-4 mb-6 text-left">
                 <h3 class="font-semibold text-red-900 mb-2">Missing Tables:</h3>
                 <ul class="text-red-800 text-sm space-y-1 ml-4">
                     <?php foreach ($missing_tables as $table): ?>
@@ -92,7 +92,7 @@ if (!empty($missing_tables)) {
             result.classList.remove('hidden');
             if (data.success) {
                 result.innerHTML = `
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                    <div class="bg-green-100  text-green-700 p-4 rounded-lg">
                         <h3 class="font-bold mb-2">Connection Test Successful!</h3>
                         <p class="text-sm">Found ${data.records_found} training records in SEAIT database</p>
                         <p class="text-xs mt-2">Ready to migrate. Click the "Migrate Training System" button to proceed.</p>
@@ -100,7 +100,7 @@ if (!empty($missing_tables)) {
                 `;
             } else {
                 result.innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                    <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                         <h3 class="font-bold mb-2">Connection Test Failed</h3>
                         <p class="text-sm">${data.message}</p>
                         <p class="text-xs mt-2">Step: ${data.step}</p>
@@ -113,7 +113,7 @@ if (!empty($missing_tables)) {
         .catch(error => {
             result.classList.remove('hidden');
             result.innerHTML = `
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                     <h3 class="font-bold mb-2">Request Error</h3>
                     <p class="text-sm">${error.message}</p>
                 </div>
@@ -144,7 +144,7 @@ if (!empty($missing_tables)) {
             result.classList.remove('hidden');
             if (data.success) {
                 result.innerHTML = `
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                    <div class="bg-green-100  text-green-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-check-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Migration Successful!</h3>
@@ -163,7 +163,7 @@ if (!empty($missing_tables)) {
                 `;
             } else {
                 result.innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                    <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Migration Failed</h3>
@@ -179,7 +179,7 @@ if (!empty($missing_tables)) {
             console.error('Migration error:', error);
             result.classList.remove('hidden');
             result.innerHTML = `
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                     <p><strong>Error:</strong> ${error.message}</p>
                     <p class="text-xs mt-2">Check browser console for details</p>
                 </div>

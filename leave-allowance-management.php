@@ -431,7 +431,7 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl shadow-lg p-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold mb-2">
@@ -443,7 +443,7 @@ include 'includes/header.php';
                 <?php if (function_exists('getRoleBadge')): ?>
                     <?php echo getRoleBadge($_SESSION['role']); ?>
                 <?php endif; ?>
-                <a href="leave-management.php" class="bg-white text-emerald-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                <a href="leave-management.php" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-calendar-alt mr-2"></i>Leave Requests
                 </a>
             </div>
@@ -464,7 +464,7 @@ include 'includes/header.php';
 <?php endif; ?>
 <!-- Statistics -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-users text-blue-600 text-xl"></i>
@@ -477,7 +477,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-chalkboard-teacher text-purple-600 text-xl"></i>
@@ -490,7 +490,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-calendar-check text-green-600 text-xl"></i>
@@ -503,7 +503,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-clock text-orange-600 text-xl"></i>
@@ -521,9 +521,9 @@ include 'includes/header.php';
 <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">
-            <i class="fas fa-filter text-emerald-600 mr-2"></i>Filter Allowances
+            <i class="fas fa-filter text-green-600 mr-2"></i>Filter Allowances
         </h3>
-        <a href="leave-allowance-management.php?tab=<?php echo htmlspecialchars($current_tab); ?>" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors">
+        <a href="leave-allowance-management.php?tab=<?php echo htmlspecialchars($current_tab); ?>" class="text-sm text-green-600 hover:text-emerald-700 font-medium transition-colors">
             <i class="fas fa-redo mr-1"></i>Reset Filters
         </a>
     </div>
@@ -533,7 +533,7 @@ include 'includes/header.php';
         
         <div>
             <label for="year-filter" class="block text-sm font-medium text-gray-700 mb-2">Year</label>
-            <select name="year" id="year-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <select name="year" id="year-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <?php for ($year = $current_year + 2; $year >= $current_year - 2; $year--): ?>
                     <option value="<?php echo $year; ?>" <?php echo $year_filter == $year ? 'selected' : ''; ?>><?php echo $year; ?></option>
                 <?php endfor; ?>
@@ -542,7 +542,7 @@ include 'includes/header.php';
         
         <div>
             <label for="department-filter" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-            <select name="department" id="department-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <select name="department" id="department-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Departments</option>
                 <?php foreach ($departments as $dept): ?>
                     <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $department_filter === $dept ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
@@ -552,7 +552,7 @@ include 'includes/header.php';
         
         <div>
             <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select name="status" id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <select name="status" id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
                 <option value="regular" <?php echo $status_filter === 'regular' ? 'selected' : ''; ?>>Regular</option>
                 <option value="probationary" <?php echo $status_filter === 'probationary' ? 'selected' : ''; ?>>Probationary</option>
@@ -561,11 +561,11 @@ include 'includes/header.php';
         
         <div>
             <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-            <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name or ID..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
+            <input type="text" name="search" id="search" value="<?php echo htmlspecialchars($search ?? ''); ?>" placeholder="Name or ID..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
         </div>
         
         <div class="flex items-end">
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                 <i class="fas fa-search mr-2"></i>Apply Filters
             </button>
         </div>
@@ -598,7 +598,7 @@ include 'includes/header.php';
     
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gradient-to-r from-emerald-600 to-emerald-700">
+            <thead class="bg-gradient-to-r from-green-600 to-green-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Status</th>
@@ -626,7 +626,7 @@ include 'includes/header.php';
                 </tr>
                 <?php else: ?>
                     <?php foreach ($leave_balances as $balance): ?>
-                    <tr class="hover:bg-emerald-50 transition-colors">
+                    <tr class="hover:bg-green-50 transition-colors">
                             <td class="px-4 py-4">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-8 w-8">

@@ -116,7 +116,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Period Information -->
-<div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-500 p-4 rounded-lg mb-6">
+<div class="bg-gradient-to-r from-green-50 to-blue-50  p-4 rounded-lg mb-6">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
             <p class="text-xs text-gray-600 mb-1">Period Type</p>
@@ -457,7 +457,7 @@ function openDeductionsModal(employeeId) {
     });
     
     deductionsHTML += `
-        <div class="bg-green-50 border-l-4 border-green-500 p-4">
+        <div class="bg-green-50  p-4">
             <div class="flex justify-between items-center">
                 <span class="font-semibold text-green-900">Total Deductions:</span>
                 <span class="text-xl font-bold text-green-900" id="modalTotalDeductions">₱0.00</span>

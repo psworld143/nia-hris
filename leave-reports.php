@@ -301,7 +301,7 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-xl shadow-lg p-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold mb-2">
@@ -313,7 +313,7 @@ include 'includes/header.php';
                 <?php if (function_exists('getRoleBadge')): ?>
                     <?php echo getRoleBadge($_SESSION['role']); ?>
                 <?php endif; ?>
-                <button onclick="exportReport()" class="bg-white text-cyan-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                <button onclick="exportReport()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-download mr-2"></i>Export Report
                 </button>
             </div>
@@ -337,9 +337,9 @@ include 'includes/header.php';
 <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">
-            <i class="fas fa-filter text-cyan-600 mr-2"></i>Report Filters
+            <i class="fas fa-filter text-green-600 mr-2"></i>Report Filters
         </h3>
-        <button type="button" onclick="clearAllFilters()" class="text-sm text-cyan-600 hover:text-cyan-700 font-medium transition-colors">
+        <button type="button" onclick="clearAllFilters()" class="text-sm text-green-600 hover:text-cyan-700 font-medium transition-colors">
             <i class="fas fa-redo mr-1"></i>Reset Filters
         </button>
     </div>
@@ -347,7 +347,7 @@ include 'includes/header.php';
     <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
             <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Year</label>
-            <select name="year" id="year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="year" id="year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
                     <option value="<?php echo $y; ?>" <?php echo $y == $year_filter ? 'selected' : ''; ?>><?php echo $y; ?></option>
                 <?php endfor; ?>
@@ -356,7 +356,7 @@ include 'includes/header.php';
         
         <div>
             <label for="month" class="block text-sm font-medium text-gray-700 mb-2">Month</label>
-            <select name="month" id="month" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="month" id="month" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Months</option>
                 <?php for ($m = 1; $m <= 12; $m++): ?>
                     <option value="<?php echo $m; ?>" <?php echo $m == $month_filter ? 'selected' : ''; ?>><?php echo date('F', mktime(0, 0, 0, $m, 1)); ?></option>
@@ -366,7 +366,7 @@ include 'includes/header.php';
         
         <div>
             <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-            <select name="department" id="department" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="department" id="department" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Departments</option>
                 <?php foreach ($departments as $dept): ?>
                     <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $dept == $department_filter ? 'selected' : ''; ?>><?php echo htmlspecialchars($dept); ?></option>
@@ -377,7 +377,7 @@ include 'includes/header.php';
         <div>
             <label for="employee_type" class="block text-sm font-medium text-gray-700 mb-2">Employee Type
             </label>
-            <select name="employee_type" id="employee_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="employee_type" id="employee_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="all" <?php echo $employee_type_filter == 'all' ? 'selected' : ''; ?>>All Employees</option>
                 <option value="employee" <?php echo $employee_type_filter == 'employee' ? 'selected' : ''; ?>>Staff/Admin</option>
                 <option value="faculty" <?php echo $employee_type_filter == 'faculty' ? 'selected' : ''; ?>>Faculty</option>
@@ -386,7 +386,7 @@ include 'includes/header.php';
         
         <div>
             <label for="leave_type" class="block text-sm font-medium text-gray-700 mb-2">Leave Type</label>
-            <select name="leave_type" id="leave_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="leave_type" id="leave_type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Leave Types</option>
                 <?php foreach ($leave_types as $lt): ?>
                     <option value="<?php echo $lt['id']; ?>" <?php echo $lt['id'] == $leave_type_filter ? 'selected' : ''; ?>><?php echo htmlspecialchars($lt['name']); ?></option>
@@ -396,7 +396,7 @@ include 'includes/header.php';
         
         <div>
             <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select name="status" id="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <select name="status" id="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Statuses</option>
                 <option value="pending" <?php echo $status_filter == 'pending' ? 'selected' : ''; ?>>Pending</option>
                 <option value="approved_by_head" <?php echo $status_filter == 'approved_by_head' ? 'selected' : ''; ?>>Approved by Head</option>
@@ -408,16 +408,16 @@ include 'includes/header.php';
         
         <div>
             <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-            <input type="date" name="date_from" id="date_from" value="<?php echo $date_from; ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <input type="date" name="date_from" id="date_from" value="<?php echo $date_from; ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
         </div>
         
         <div>
             <label for="date_to" class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-            <input type="date" name="date_to" id="date_to" value="<?php echo $date_to; ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent">
+            <input type="date" name="date_to" id="date_to" value="<?php echo $date_to; ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
         </div>
         
         <div class="flex items-end col-span-1 md:col-span-2 lg:col-span-1">
-            <button type="submit" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                 <i class="fas fa-search mr-2"></i>Apply Filters
             </button>
         </div>
@@ -431,11 +431,11 @@ include 'includes/header.php';
 <div class="bg-white rounded-xl shadow-lg p-4 mb-6">
     <nav class="flex space-x-4">
         <a href="?<?php echo http_build_query(array_merge($_GET, ['tab' => 'overview'])); ?>" 
-           class="<?php echo $current_tab === 'overview' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-100'; ?> px-6 py-2 rounded-lg font-medium transition-colors">
+           class="<?php echo $current_tab === 'overview' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-100'; ?> px-6 py-2 rounded-lg font-medium transition-colors">
             <i class="fas fa-chart-pie mr-2"></i>Overview
         </a>
         <a href="?<?php echo http_build_query(array_merge($_GET, ['tab' => 'trends'])); ?>" 
-           class="<?php echo $current_tab === 'trends' ? 'bg-cyan-600 text-white' : 'text-gray-600 hover:bg-gray-100'; ?> px-6 py-2 rounded-lg font-medium transition-colors">
+           class="<?php echo $current_tab === 'trends' ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-100'; ?> px-6 py-2 rounded-lg font-medium transition-colors">
             <i class="fas fa-chart-line mr-2"></i>Trends
         </a>
     </nav>
@@ -445,7 +445,7 @@ include 'includes/header.php';
 <?php if ($current_tab === 'overview'): ?>
     <!-- Statistics -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div class="bg-white rounded-xl shadow-lg p-6 ">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                     <i class="fas fa-file-alt text-blue-600 text-xl"></i>
@@ -457,7 +457,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+        <div class="bg-white rounded-xl shadow-lg p-6 ">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
                     <i class="fas fa-clock text-yellow-600 text-xl"></i>
@@ -469,7 +469,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+        <div class="bg-white rounded-xl shadow-lg p-6 ">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                     <i class="fas fa-check text-green-600 text-xl"></i>
@@ -481,7 +481,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+        <div class="bg-white rounded-xl shadow-lg p-6 ">
             <div class="flex items-center">
                 <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                     <i class="fas fa-times text-red-600 text-xl"></i>
@@ -499,7 +499,7 @@ include 'includes/header.php';
         <!-- Leave Type Distribution -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-chart-pie text-cyan-600 mr-2"></i>Leave Type Distribution
+                <i class="fas fa-chart-pie text-green-600 mr-2"></i>Leave Type Distribution
             </h3>
                         <div class="space-y-3">
                             <?php if (isset($overview_stats['leave_type_distribution']) && $overview_stats['leave_type_distribution']): ?>
@@ -523,12 +523,12 @@ include 'includes/header.php';
         <!-- Department Distribution -->
         <div class="bg-white rounded-xl shadow-lg p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                <i class="fas fa-building text-cyan-600 mr-2"></i>Department Distribution
+                <i class="fas fa-building text-green-600 mr-2"></i>Department Distribution
             </h3>
             <div class="space-y-3">
                 <?php if (isset($overview_stats['department_distribution']) && $overview_stats['department_distribution']): ?>
                     <?php while ($row = mysqli_fetch_assoc($overview_stats['department_distribution'])): ?>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-cyan-50 transition-colors">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition-colors">
                             <span class="text-sm font-medium text-gray-700"><?php echo htmlspecialchars($row['department']); ?></span>
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800"><?php echo $row['request_count']; ?></span>
@@ -549,7 +549,7 @@ include 'includes/header.php';
     <!-- Monthly Trends Chart -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-chart-line text-cyan-600 mr-2"></i>Monthly Leave Request Trends (<?php echo $year_filter; ?>)
+            <i class="fas fa-chart-line text-green-600 mr-2"></i>Monthly Leave Request Trends (<?php echo $year_filter; ?>)
         </h3>
         <div class="h-64 flex items-end justify-between space-x-2">
             <?php if (!empty($monthly_trends)): ?>
@@ -561,7 +561,7 @@ include 'includes/header.php';
                     <div class="flex-1 flex flex-col items-center">
                         <div class="w-full bg-gray-200 rounded-t" style="height: <?php echo max(20, ($trend['count'] / $max_count) * 200); ?>px; background: linear-gradient(to top, #06b6d4, #22d3ee);"></div>
                         <div class="text-xs text-gray-600 mt-2 text-center rotate-45 origin-left"><?php echo substr($trend['month'], 0, 3); ?></div>
-                        <div class="text-xs font-bold text-cyan-600"><?php echo $trend['count']; ?></div>
+                        <div class="text-xs font-bold text-green-600"><?php echo $trend['count']; ?></div>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
@@ -576,7 +576,7 @@ include 'includes/header.php';
     <!-- Year-over-Year Comparison -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-calendar-alt text-cyan-600 mr-2"></i>Year-over-Year Comparison
+            <i class="fas fa-calendar-alt text-green-600 mr-2"></i>Year-over-Year Comparison
         </h3>
         
         <?php
@@ -615,7 +615,7 @@ include 'includes/header.php';
         <!-- Data Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gradient-to-r from-cyan-600 to-cyan-700">
+                <thead class="bg-gradient-to-r from-green-600 to-green-700">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Year</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Total Requests</th>
@@ -626,7 +626,7 @@ include 'includes/header.php';
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($years_data as $data): ?>
-                        <tr class="hover:bg-cyan-50 transition-colors">
+                        <tr class="hover:bg-green-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900"><?php echo $data['year']; ?></td>
                             <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800"><?php echo $data['total_requests']; ?></span></td>
                             <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"><?php echo $data['approved_requests']; ?></span></td>

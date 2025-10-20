@@ -266,7 +266,7 @@ include 'includes/header.php';
 
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
-    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl">
@@ -281,7 +281,7 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl">
@@ -296,7 +296,7 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-green-400 sm:col-span-2 lg:col-span-1">
+    <div class="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6  sm:col-span-2 lg:col-span-1">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl">

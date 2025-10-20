@@ -257,7 +257,7 @@ include 'includes/header.php';
 
 <!-- Summary Statistics -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -272,7 +272,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -287,7 +287,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">

@@ -29,7 +29,7 @@ if (!$tables_exist) {
                 The payroll system tables haven't been created yet. Click the button below to install the complete payroll system.
             </p>
             
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+            <div class="bg-blue-50  p-4 mb-6 text-left">
                 <h3 class="font-semibold text-blue-900 mb-2">What will be installed:</h3>
                 <ul class="text-blue-800 space-y-1 ml-4">
                     <li>✓ Payroll periods management</li>
@@ -71,7 +71,7 @@ if (!$tables_exist) {
             result.classList.remove('hidden');
             if (data.success) {
                 result.innerHTML = `
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                    <div class="bg-green-100  text-green-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-check-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Installation Successful!</h3>
@@ -85,7 +85,7 @@ if (!$tables_exist) {
                 `;
             } else {
                 result.innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                    <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Installation Failed</h3>
@@ -100,7 +100,7 @@ if (!$tables_exist) {
         .catch(error => {
             result.classList.remove('hidden');
             result.innerHTML = `
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                     <p><strong>Error:</strong> ${error.message}</p>
                 </div>
             `;
@@ -178,7 +178,7 @@ include 'includes/header.php';
 
 <!-- Success/Error Messages -->
 <?php if (isset($_SESSION['success_message'])): ?>
-    <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md" role="alert">
+    <div class="mb-6 bg-green-100  text-green-700 p-4 rounded-lg shadow-md" role="alert">
         <div class="flex items-center">
             <i class="fas fa-check-circle mr-3 text-xl"></i>
             <p class="font-medium"><?php echo $_SESSION['success_message']; ?></p>
@@ -188,7 +188,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <?php if (isset($_SESSION['error_message'])): ?>
-    <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md" role="alert">
+    <div class="mb-6 bg-red-100  text-red-700 p-4 rounded-lg shadow-md" role="alert">
         <div class="flex items-center">
             <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
             <p class="font-medium"><?php echo $_SESSION['error_message']; ?></p>
@@ -222,7 +222,7 @@ include 'includes/header.php';
 
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -236,7 +236,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -250,7 +250,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -264,7 +264,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">

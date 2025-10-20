@@ -108,7 +108,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Year-to-Date Summary -->
-<div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-500 p-6 rounded-lg mb-6">
+<div class="bg-gradient-to-r from-green-50 to-blue-50  p-6 rounded-lg mb-6">
     <h3 class="text-lg font-semibold text-gray-900 mb-4">Year-to-Date Summary (<?php echo $filter_year; ?>)</h3>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div>

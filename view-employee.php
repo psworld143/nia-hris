@@ -36,9 +36,12 @@ if (!$employee_id) {
 $employee_query = "SELECT e.id, e.employee_id, e.first_name, e.last_name, e.email, e.position, 
                           e.department, e.employee_type, e.hire_date, e.phone, e.address, 
                           e.is_active, e.created_at, e.updated_at,
+                          e.blood_type, e.medical_conditions, e.allergies, e.medications,
+                          e.last_medical_checkup, e.medical_notes,
+                          e.emergency_contact_name, e.emergency_contact_number,
                           ed.middle_name, ed.date_of_birth, ed.gender, ed.civil_status, 
-                          ed.nationality, ed.religion, ed.emergency_contact_name, 
-                          ed.emergency_contact_number, ed.emergency_contact_relationship,
+                          ed.nationality, ed.religion, 
+                          ed.emergency_contact_relationship,
                           ed.employment_type, ed.employment_status, ed.job_level, ed.immediate_supervisor, 
                           ed.work_schedule, ed.basic_salary, ed.salary_grade, 
                           ed.step_increment, ed.allowances, ed.pay_schedule,
@@ -48,7 +51,7 @@ $employee_query = "SELECT e.id, e.employee_id, e.first_name, e.last_name, e.emai
                           ed.prc_license_number, ed.prc_license_expiry, ed.prc_profession,
                           ed.highest_education, ed.field_of_study, ed.school_university, 
                           ed.year_graduated, ed.honors_awards,
-                          ed.blood_type, ed.languages_spoken, ed.skills_competencies, 
+                          ed.languages_spoken, ed.skills_competencies, 
                           ed.notes, ed.profile_photo,
                           d.name as department_name, 
                           d.icon as department_icon, 
@@ -86,6 +89,25 @@ if ($employee_stmt) {
     if ($employee_result && $employee = mysqli_fetch_assoc($employee_result)) {
         // Employee found
         $page_title = 'Employee Profile - ' . $employee['first_name'] . ' ' . $employee['last_name'];
+        
+        // Get medical history records
+        $medical_history_query = "SELECT * FROM employee_medical_history 
+                                  WHERE employee_id = ? 
+                                  ORDER BY record_date DESC, created_at DESC 
+                                  LIMIT 20";
+        $medical_stmt = mysqli_prepare($conn, $medical_history_query);
+        if ($medical_stmt) {
+            mysqli_stmt_bind_param($medical_stmt, "i", $employee['id']);
+            mysqli_stmt_execute($medical_stmt);
+            $medical_history_result = mysqli_stmt_get_result($medical_stmt);
+            $medical_history = [];
+            while ($record = mysqli_fetch_assoc($medical_history_result)) {
+                $medical_history[] = $record;
+            }
+            mysqli_stmt_close($medical_stmt);
+        } else {
+            $medical_history = [];
+        }
     } else {
         // Employee not found
         header('Location: admin-employee.php');
@@ -519,6 +541,296 @@ include 'includes/header.php';
         </div>
         <?php endif; ?>
 
+        <!-- Medical History Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="flex items-center mb-6">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                    <i class="fas fa-heartbeat text-red-600 text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Medical History</h3>
+                    <p class="text-gray-600 text-sm">Health records and medical information</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Blood Type -->
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-tint text-red-600"></i>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Blood Type</label>
+                        <p class="text-gray-900 font-medium">
+                            <?php echo $employee['blood_type'] ? htmlspecialchars($employee['blood_type']) : '<span class="text-gray-400">Not specified</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Last Medical Checkup -->
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-calendar-check text-blue-600"></i>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Last Medical Checkup</label>
+                        <p class="text-gray-900 font-medium">
+                            <?php 
+                            if ($employee['last_medical_checkup']) {
+                                echo date('F j, Y', strtotime($employee['last_medical_checkup']));
+                            } else {
+                                echo '<span class="text-gray-400">No record</span>';
+                            }
+                            ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Medical Conditions -->
+                <div class="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors md:col-span-2">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fas fa-file-medical text-yellow-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Medical Conditions</label>
+                        <p class="text-gray-900">
+                            <?php echo $employee['medical_conditions'] ? nl2br(htmlspecialchars($employee['medical_conditions'])) : '<span class="text-gray-400">None reported</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Allergies -->
+                <div class="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors md:col-span-2">
+                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fas fa-allergies text-orange-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Allergies</label>
+                        <p class="text-gray-900">
+                            <?php echo $employee['allergies'] ? nl2br(htmlspecialchars($employee['allergies'])) : '<span class="text-gray-400">None reported</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Medications -->
+                <div class="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors md:col-span-2">
+                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fas fa-pills text-purple-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Current Medications</label>
+                        <p class="text-gray-900">
+                            <?php echo $employee['medications'] ? nl2br(htmlspecialchars($employee['medications'])) : '<span class="text-gray-400">None reported</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact Name -->
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-user-shield text-green-600"></i>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Emergency Contact</label>
+                        <p class="text-gray-900 font-medium">
+                            <?php echo $employee['emergency_contact_name'] ? htmlspecialchars($employee['emergency_contact_name']) : '<span class="text-gray-400">Not specified</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact Number -->
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-phone-alt text-green-600"></i>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">Emergency Number</label>
+                        <p class="text-gray-900 font-medium">
+                            <?php echo $employee['emergency_contact_number'] ? htmlspecialchars($employee['emergency_contact_number']) : '<span class="text-gray-400">Not specified</span>'; ?>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Medical Notes -->
+                <?php if ($employee['medical_notes']): ?>
+                <div class="flex items-start p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500 md:col-span-2">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                        <i class="fas fa-notes-medical text-blue-600"></i>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-blue-700 mb-1">Medical Notes</label>
+                        <p class="text-blue-900 text-sm">
+                            <?php echo nl2br(htmlspecialchars($employee['medical_notes'])); ?>
+                        </p>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if (in_array($_SESSION['role'], ['super_admin', 'nurse'])): ?>
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <a href="medical-records.php" class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-edit mr-2"></i>
+                    Update Medical Records
+                </a>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Medical History Timeline -->
+        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-history text-red-600 text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Medical History Timeline</h3>
+                        <p class="text-gray-600 text-sm">Past medical records and health events</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
+                        <?php echo count($medical_history); ?> Records
+                    </span>
+                    <?php if (in_array($_SESSION['role'], ['super_admin', 'nurse'])): ?>
+                    <button onclick="openAddMedicalHistoryModal()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-semibold">
+                        <i class="fas fa-plus mr-2"></i>Add Record
+                    </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <?php if (empty($medical_history)): ?>
+            <div class="text-center py-8">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-notes-medical text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500 mb-4">No medical history records yet</p>
+                <?php if (in_array($_SESSION['role'], ['super_admin', 'nurse'])): ?>
+                <button onclick="openAddMedicalHistoryModal()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add First Record
+                </button>
+                <?php endif; ?>
+            </div>
+            <?php else: ?>
+            
+            <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                <?php foreach ($medical_history as $record): ?>
+                <div class="border-l-4 <?php 
+                    $type_colors = [
+                        'checkup' => 'border-blue-500 bg-blue-50',
+                        'diagnosis' => 'border-red-500 bg-red-50',
+                        'treatment' => 'border-green-500 bg-green-50',
+                        'vaccination' => 'border-purple-500 bg-purple-50',
+                        'lab_test' => 'border-yellow-500 bg-yellow-50',
+                        'consultation' => 'border-teal-500 bg-teal-50',
+                        'emergency' => 'border-orange-500 bg-orange-50',
+                        'follow_up' => 'border-indigo-500 bg-indigo-50'
+                    ];
+                    echo $type_colors[$record['record_type']] ?? 'border-gray-500 bg-gray-50';
+                ?> p-4 rounded-lg hover:shadow-md transition-shadow">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase <?php
+                                $badge_colors = [
+                                    'checkup' => 'bg-blue-200 text-blue-800',
+                                    'diagnosis' => 'bg-red-200 text-red-800',
+                                    'treatment' => 'bg-green-200 text-green-800',
+                                    'vaccination' => 'bg-purple-200 text-purple-800',
+                                    'lab_test' => 'bg-yellow-200 text-yellow-800',
+                                    'consultation' => 'bg-teal-200 text-teal-800',
+                                    'emergency' => 'bg-orange-200 text-orange-800',
+                                    'follow_up' => 'bg-indigo-200 text-indigo-800'
+                                ];
+                                echo $badge_colors[$record['record_type']] ?? 'bg-gray-200 text-gray-800';
+                            ?>">
+                                <?php echo str_replace('_', ' ', $record['record_type']); ?>
+                            </span>
+                        </div>
+                        <span class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            <?php echo date('F j, Y', strtotime($record['record_date'])); ?>
+                        </span>
+                    </div>
+                    
+                    <?php if ($record['chief_complaint']): ?>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Chief Complaint:</span>
+                        <p class="text-sm text-gray-900"><?php echo htmlspecialchars($record['chief_complaint']); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($record['diagnosis']): ?>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Diagnosis:</span>
+                        <p class="text-sm text-gray-900"><?php echo nl2br(htmlspecialchars($record['diagnosis'])); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($record['treatment']): ?>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Treatment:</span>
+                        <p class="text-sm text-gray-900"><?php echo htmlspecialchars($record['treatment']); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($record['medication_prescribed']): ?>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Medication:</span>
+                        <p class="text-sm text-gray-900"><?php echo nl2br(htmlspecialchars($record['medication_prescribed'])); ?></p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($record['vital_signs']): ?>
+                    <div class="mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Vital Signs:</span>
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            <?php 
+                            $vitals = json_decode($record['vital_signs'], true);
+                            if ($vitals):
+                                if (isset($vitals['blood_pressure'])): ?>
+                                    <span class="px-2 py-1 bg-white rounded text-xs border">
+                                        <i class="fas fa-heartbeat text-red-500 mr-1"></i>BP: <?php echo $vitals['blood_pressure']; ?>
+                                    </span>
+                                <?php endif;
+                                if (isset($vitals['heart_rate'])): ?>
+                                    <span class="px-2 py-1 bg-white rounded text-xs border">
+                                        <i class="fas fa-heart text-pink-500 mr-1"></i>HR: <?php echo $vitals['heart_rate']; ?> bpm
+                                    </span>
+                                <?php endif;
+                                if (isset($vitals['temperature'])): ?>
+                                    <span class="px-2 py-1 bg-white rounded text-xs border">
+                                        <i class="fas fa-thermometer-half text-orange-500 mr-1"></i>Temp: <?php echo $vitals['temperature']; ?>°C
+                                    </span>
+                                <?php endif;
+                            endif;
+                            ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
+                        <div>
+                            <?php if ($record['doctor_name']): ?>
+                                <i class="fas fa-user-md mr-1"></i><?php echo htmlspecialchars($record['doctor_name']); ?>
+                            <?php endif; ?>
+                            <?php if ($record['clinic_hospital']): ?>
+                                <span class="ml-3"><i class="fas fa-hospital mr-1"></i><?php echo htmlspecialchars($record['clinic_hospital']); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($record['follow_up_date']): ?>
+                        <span class="text-orange-600">
+                            <i class="fas fa-calendar-check mr-1"></i>Follow-up: <?php echo date('M j, Y', strtotime($record['follow_up_date'])); ?>
+                        </span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Educational Background Card -->
         <?php if ($employee['highest_education'] || $employee['field_of_study'] || $employee['school_university']): ?>
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
@@ -784,3 +1096,241 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Add Medical History Modal -->
+<div id="addMedicalHistoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-2xl rounded-xl bg-white mb-10">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-gray-900">
+                <i class="fas fa-plus-circle text-red-600 mr-2"></i>Add Medical History Record
+            </h3>
+            <button onclick="closeAddMedicalHistoryModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="addMedicalHistoryForm" class="space-y-4">
+            <input type="hidden" name="employee_id" value="<?php echo $employee['id']; ?>">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Record Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-calendar text-red-500 mr-1"></i>Record Date *
+                    </label>
+                    <input type="date" name="record_date" required 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Record Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tags text-red-500 mr-1"></i>Record Type *
+                    </label>
+                    <select name="record_type" required 
+                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <option value="checkup">Checkup</option>
+                        <option value="diagnosis">Diagnosis</option>
+                        <option value="treatment">Treatment</option>
+                        <option value="vaccination">Vaccination</option>
+                        <option value="lab_test">Lab Test</option>
+                        <option value="consultation">Consultation</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="follow_up">Follow-up</option>
+                    </select>
+                </div>
+
+                <!-- Chief Complaint -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-comment-medical text-red-500 mr-1"></i>Chief Complaint
+                    </label>
+                    <input type="text" name="chief_complaint" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                           placeholder="Main reason for visit">
+                </div>
+
+                <!-- Diagnosis -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-stethoscope text-red-500 mr-1"></i>Diagnosis
+                    </label>
+                    <textarea name="diagnosis" rows="2"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Medical diagnosis"></textarea>
+                </div>
+
+                <!-- Treatment -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-procedures text-red-500 mr-1"></i>Treatment
+                    </label>
+                    <textarea name="treatment" rows="2"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Treatment provided"></textarea>
+                </div>
+
+                <!-- Medication -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-pills text-red-500 mr-1"></i>Medication Prescribed
+                    </label>
+                    <textarea name="medication_prescribed" rows="2"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Medications and dosage"></textarea>
+                </div>
+
+                <!-- Vital Signs Section -->
+                <div class="md:col-span-2 border-t pt-4">
+                    <h4 class="font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-heartbeat text-red-500 mr-2"></i>Vital Signs
+                    </h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Blood Pressure</label>
+                            <input type="text" name="blood_pressure" placeholder="120/80"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Heart Rate (bpm)</label>
+                            <input type="number" name="heart_rate" placeholder="72"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Temperature (°C)</label>
+                            <input type="number" step="0.1" name="temperature" placeholder="36.5"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Respiratory Rate</label>
+                            <input type="number" name="respiratory_rate" placeholder="16"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
+                            <input type="number" step="0.1" name="weight" placeholder="65"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Height (cm)</label>
+                            <input type="number" name="height" placeholder="165"
+                                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-red-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user-md text-red-500 mr-1"></i>Doctor Name
+                    </label>
+                    <input type="text" name="doctor_name" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                           placeholder="Dr. Juan Dela Cruz">
+                </div>
+
+                <!-- Clinic/Hospital -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-hospital text-red-500 mr-1"></i>Clinic/Hospital
+                    </label>
+                    <input type="text" name="clinic_hospital" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                           placeholder="NIA Health Center">
+                </div>
+
+                <!-- Lab Results -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-vial text-red-500 mr-1"></i>Lab Results
+                    </label>
+                    <textarea name="lab_results" rows="2"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Laboratory test results"></textarea>
+                </div>
+
+                <!-- Follow-up Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-calendar-check text-red-500 mr-1"></i>Follow-up Date
+                    </label>
+                    <input type="date" name="follow_up_date" 
+                           class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-notes-medical text-red-500 mr-1"></i>Additional Notes
+                    </label>
+                    <textarea name="notes" rows="2"
+                              class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                              placeholder="Any additional observations or notes"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-6 border-t">
+                <button type="button" onclick="closeAddMedicalHistoryModal()" 
+                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button type="submit" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>Save Record
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Open Add Medical History Modal
+function openAddMedicalHistoryModal() {
+    document.getElementById('addMedicalHistoryModal').classList.remove('hidden');
+    // Set default date to today
+    document.querySelector('[name="record_date"]').value = new Date().toISOString().split('T')[0];
+}
+
+// Close Add Medical History Modal
+function closeAddMedicalHistoryModal() {
+    document.getElementById('addMedicalHistoryModal').classList.add('hidden');
+    document.getElementById('addMedicalHistoryForm').reset();
+}
+
+// Handle form submission
+document.getElementById('addMedicalHistoryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Disable button and show loading
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    
+    fetch('add-medical-history.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            alert('Medical history record added successfully!');
+            // Reload page to show new record
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        alert('Error adding medical history record. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+</script>
+
+<?php include 'includes/footer.php'; ?>

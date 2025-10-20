@@ -29,7 +29,7 @@ if (!$table_exists) {
                 The degrees table hasn't been created yet. Click the button below to create it with default educational degree levels.
             </p>
             
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 text-left">
+            <div class="bg-blue-50  p-4 mb-6 text-left">
                 <h3 class="font-semibold text-blue-900 mb-2">What will be created:</h3>
                 <ul class="text-blue-800 space-y-1 ml-4">
                     <li>✓ Degrees database table with proper structure</li>
@@ -67,7 +67,7 @@ if (!$table_exists) {
             result.classList.remove('hidden');
             if (data.success) {
                 result.innerHTML = `
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+                    <div class="bg-green-100  text-green-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-check-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Setup Successful!</h3>
@@ -82,7 +82,7 @@ if (!$table_exists) {
                 `;
             } else {
                 result.innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                    <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                         <div class="flex items-center mb-2">
                             <i class="fas fa-exclamation-circle text-2xl mr-3"></i>
                             <h3 class="font-bold text-lg">Setup Failed</h3>
@@ -97,7 +97,7 @@ if (!$table_exists) {
         .catch(error => {
             result.classList.remove('hidden');
             result.innerHTML = `
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+                <div class="bg-red-100  text-red-700 p-4 rounded-lg">
                     <p><strong>Error:</strong> ${error.message}</p>
                 </div>
             `;
@@ -181,7 +181,7 @@ include 'includes/header.php';
 
 <!-- Success/Error Messages -->
 <?php if (isset($_SESSION['success_message'])): ?>
-    <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-md animate-fade-in" role="alert">
+    <div class="mb-6 bg-green-100  text-green-700 p-4 rounded-lg shadow-md animate-fade-in" role="alert">
         <div class="flex items-center">
             <i class="fas fa-check-circle mr-3 text-xl"></i>
             <p class="font-medium"><?php echo $_SESSION['success_message']; ?></p>
@@ -191,7 +191,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <?php if (isset($_SESSION['error_message'])): ?>
-    <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-md animate-fade-in" role="alert">
+    <div class="mb-6 bg-red-100  text-red-700 p-4 rounded-lg shadow-md animate-fade-in" role="alert">
         <div class="flex items-center">
             <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
             <p class="font-medium"><?php echo $_SESSION['error_message']; ?></p>
@@ -226,7 +226,7 @@ include 'includes/header.php';
     $inactive_degrees = $total_degrees - $active_degrees;
     ?>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -240,7 +240,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -254,7 +254,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-gray-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">

@@ -81,7 +81,7 @@ include 'includes/header.php';
 
 <!-- Period Summary -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-users text-blue-600 text-xl"></i>
@@ -93,7 +93,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-money-bill-wave text-green-600 text-xl"></i>
@@ -105,7 +105,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-minus-circle text-red-600 text-xl"></i>
@@ -117,7 +117,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-hand-holding-usd text-purple-600 text-xl"></i>

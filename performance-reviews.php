@@ -207,7 +207,7 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl shadow-lg p-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-bold mb-2">
@@ -219,7 +219,7 @@ include 'includes/header.php';
                 <?php if (function_exists('getRoleBadge')): ?>
                     <?php echo getRoleBadge($_SESSION['role']); ?>
                 <?php endif; ?>
-                <button onclick="openCreateModal()" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                <button onclick="openCreateModal()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
                     <i class="fas fa-plus mr-2"></i>New Review
                 </button>
             </div>
@@ -236,7 +236,7 @@ include 'includes/header.php';
 
 <!-- Statistics -->
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-clipboard-list text-blue-600 text-xl"></i>
@@ -248,7 +248,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-clock text-yellow-600 text-xl"></i>
@@ -260,7 +260,7 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
                 <i class="fas fa-check-circle text-green-600 text-xl"></i>
@@ -272,10 +272,10 @@ include 'includes/header.php';
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
-                <i class="fas fa-star text-indigo-600 text-xl"></i>
+                <i class="fas fa-star text-green-600 text-xl"></i>
             </div>
             <div>
                 <p class="text-sm text-gray-600">Avg Rating</p>
@@ -289,7 +289,7 @@ include 'includes/header.php';
 <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Filter Reviews</h3>
-        <a href="performance-reviews.php" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+        <a href="performance-reviews.php" class="text-sm text-green-600 hover:text-indigo-700 font-medium">
             <i class="fas fa-redo mr-1"></i>Reset Filters
         </a>
     </div>
@@ -298,12 +298,12 @@ include 'includes/header.php';
             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input type="text" name="search" value="<?php echo htmlspecialchars($search_query); ?>" 
                    placeholder="Search employees..." 
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
         </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Status</option>
                 <?php foreach ($status_options as $status): ?>
                 <option value="<?php echo $status; ?>" <?php echo $filter_status === $status ? 'selected' : ''; ?>>
@@ -315,7 +315,7 @@ include 'includes/header.php';
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Review Type</label>
-            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Types</option>
                 <?php foreach ($review_types as $type): ?>
                 <option value="<?php echo $type; ?>" <?php echo $filter_type === $type ? 'selected' : ''; ?>>
@@ -327,7 +327,7 @@ include 'includes/header.php';
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-            <select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select name="department" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 <option value="">All Departments</option>
                 <?php foreach ($departments as $dept): ?>
                 <option value="<?php echo htmlspecialchars($dept); ?>" <?php echo $filter_department === $dept ? 'selected' : ''; ?>>
@@ -338,7 +338,7 @@ include 'includes/header.php';
         </div>
         
         <div class="flex items-end">
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
+            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
                 <i class="fas fa-search mr-1"></i> Apply Filters
             </button>
         </div>
@@ -354,7 +354,7 @@ include 'includes/header.php';
     
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200" id="reviewsTable">
-            <thead class="bg-gradient-to-r from-indigo-600 to-indigo-700">
+            <thead class="bg-gradient-to-r from-green-600 to-green-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Employee</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Review Type</th>
@@ -375,7 +375,7 @@ include 'includes/header.php';
                             </div>
                             <p class="text-lg font-medium text-gray-700">No performance reviews found</p>
                             <p class="text-sm text-gray-500 mt-1">Create your first performance review to get started.</p>
-                            <button onclick="openCreateModal()" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                            <button onclick="openCreateModal()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
                                 <i class="fas fa-plus mr-2"></i>Create Review
                             </button>
                         </div>
@@ -383,11 +383,11 @@ include 'includes/header.php';
                 </tr>
                 <?php else: ?>
                 <?php foreach ($reviews as $review): ?>
-                <tr class="hover:bg-indigo-50 transition-colors">
+                <tr class="hover:bg-green-50 transition-colors">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                                <span class="text-sm font-semibold text-indigo-600">
+                                <span class="text-sm font-semibold text-green-600">
                                     <?php echo strtoupper(substr($review['first_name'], 0, 1) . substr($review['last_name'], 0, 1)); ?>
                                 </span>
                             </div>
@@ -432,7 +432,7 @@ include 'includes/header.php';
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <?php if ($review['overall_rating']): ?>
                         <div class="flex items-center">
-                            <span class="text-lg font-bold text-indigo-600"><?php echo number_format((float)$review['overall_rating'], 1); ?></span>
+                            <span class="text-lg font-bold text-green-600"><?php echo number_format((float)$review['overall_rating'], 1); ?></span>
                             <span class="text-sm text-gray-500 ml-1">/ 5.0</span>
                         </div>
                         <?php else: ?>
@@ -443,7 +443,7 @@ include 'includes/header.php';
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                                <div class="bg-indigo-600 h-2 rounded-full" style="width: <?php echo min(100, ($review['criteria_scored'] + $review['goals_set']) * 10); ?>%"></div>
+                                <div class="bg-green-600 h-2 rounded-full" style="width: <?php echo min(100, ($review['criteria_scored'] + $review['goals_set']) * 10); ?>%"></div>
                             </div>
                             <span class="text-xs text-gray-600">
                                 <?php echo $review['criteria_scored'] + $review['goals_set']; ?> items
@@ -454,7 +454,7 @@ include 'includes/header.php';
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex items-center gap-3">
                             <a href="view-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
-                               class="text-indigo-600 hover:text-indigo-900" title="View">
+                               class="text-green-600 hover:text-green-900" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
                             <a href="conduct-performance-review.php?id=<?php echo safe_encrypt_id($review['id']); ?>" 
@@ -486,7 +486,7 @@ include 'includes/header.php';
         <div class="mt-3">
             <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-plus-circle text-indigo-600 mr-2"></i>Create New Performance Review
+                    <i class="fas fa-plus-circle text-green-600 mr-2"></i>Create New Performance Review
                 </h3>
                 <button onclick="closeCreateModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i class="fas fa-times text-xl"></i>
@@ -498,9 +498,9 @@ include 'includes/header.php';
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-user mr-2 text-indigo-600"></i>Employee
+                        <i class="fas fa-user mr-2 text-green-600"></i>Employee
                     </label>
-                    <select name="employee_id" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <select name="employee_id" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         <option value="">Select Employee</option>
                         <?php
                         $employees_query = "SELECT id, first_name, last_name, email, department, position FROM employees WHERE is_active = 1 ORDER BY first_name, last_name";
@@ -516,9 +516,9 @@ include 'includes/header.php';
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-clipboard-check mr-2 text-indigo-600"></i>Review Type
+                        <i class="fas fa-clipboard-check mr-2 text-green-600"></i>Review Type
                     </label>
-                    <select name="review_type" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <select name="review_type" required class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         <option value="">Select Review Type</option>
                         <?php foreach ($review_types as $type): ?>
                         <option value="<?php echo $type; ?>">
@@ -531,18 +531,18 @@ include 'includes/header.php';
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-calendar-alt mr-2 text-indigo-600"></i>Period Start
+                            <i class="fas fa-calendar-alt mr-2 text-green-600"></i>Period Start
                         </label>
                         <input type="date" name="review_period_start" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
                     
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-calendar-check mr-2 text-indigo-600"></i>Period End
+                            <i class="fas fa-calendar-check mr-2 text-green-600"></i>Period End
                         </label>
                         <input type="date" name="review_period_end" required 
-                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
                     </div>
                 </div>
                 
@@ -552,7 +552,7 @@ include 'includes/header.php';
                         Cancel
                     </button>
                     <button type="submit" 
-                            class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                            class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-plus mr-2"></i>Create Review
                     </button>
                 </div>

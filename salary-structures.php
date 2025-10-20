@@ -126,7 +126,7 @@ include 'includes/header.php';
 
 <!-- Statistics Cards -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-2xl">
@@ -141,7 +141,7 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-2xl">
@@ -156,7 +156,7 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+    <div class="bg-white rounded-xl shadow-lg p-6 ">
         <div class="flex items-center">
             <div class="flex-shrink-0">
                 <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl">
