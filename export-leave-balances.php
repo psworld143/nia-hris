@@ -4,7 +4,7 @@ require_once 'config/database.php';
 
 // Check if user is logged in and is HR
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: ../index.php?login=required&redirect=leave-balances');
+    header('Location: index.php?login=required&redirect=leave-balances');
     exit();
 }
 

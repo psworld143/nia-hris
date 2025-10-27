@@ -5,7 +5,7 @@ require_once 'includes/functions.php';
 
 // Check if user is logged in and has human_resource role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    header('Location: ../index.php');
+    header('Location: index.php');
     exit();
 }
 

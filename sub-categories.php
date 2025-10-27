@@ -6,7 +6,7 @@ require_once 'includes/id_encryption.php';
 
 // Check if user is logged in and has HR role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['human_resource', 'hr_manager'])) {
-    header('Location: ../login.php');
+    header('Location: login.php');
     exit();
 }
 
