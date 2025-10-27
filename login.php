@@ -1,10 +1,12 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
 // If user is already logged in, redirect to dashboard
-if (isset($_SESSION['user_id']) && in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager', 'nurse'])) {
+if (isset($_SESSION['user_id']) && in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager', 'nurse', 'employee'])) {
     header('Location: index.php');
     exit();
 }
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user = mysqli_fetch_assoc($result)) {
             if (password_verify($password, $user['password'])) {
                 // Check if user has appropriate role (all valid roles)
-                if (in_array($user['role'], ['super_admin', 'admin', 'hr_manager', 'human_resource', 'nurse'])) {
+                if (in_array($user['role'], ['super_admin', 'admin', 'hr_manager', 'human_resource', 'nurse', 'employee'])) {
                     // Set session variables
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['username'] = $user['username'];
@@ -336,7 +338,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="checkbox" class="checkbox-custom" id="rememberMe">
                         <span class="ml-2 text-sm text-gray-600">Remember me</span>
                     </label>
-                    <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                    <a href="#" onclick="openForgotPasswordModal()" class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors">
                         Forgot password?
                     </a>
                 </div>
@@ -374,6 +376,100 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mt-8 text-center text-xs text-gray-500">
                 <p>&copy; <?php echo date('Y'); ?> NIA-HRIS. All rights reserved.</p>
                 <p class="mt-1">Version 2.0 - Human Resource Management</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+            <div class="p-6">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-key text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Password Reset Required</h3>
+                            <p class="text-sm text-gray-600">Contact System Administrator</p>
+                        </div>
+                    </div>
+                    <button onclick="closeForgotPasswordModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Content -->
+                <div class="mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-600 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-semibold text-blue-900 mb-2">Password Reset Process</h4>
+                                <p class="text-blue-800 text-sm leading-relaxed">
+                                    For security reasons, password resets must be requested through your System Administrator. 
+                                    This ensures proper verification and maintains system security.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <i class="fas fa-user-shield text-green-600 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Contact Your Administrator</p>
+                                <p class="text-sm text-gray-600">Reach out to your HR Manager or System Administrator</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <i class="fas fa-envelope text-blue-600 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Provide Your Details</p>
+                                <p class="text-sm text-gray-600">Share your username and employee information</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                            <i class="fas fa-clock text-purple-600 mr-3"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Wait for Reset</p>
+                                <p class="text-sm text-gray-600">Administrator will reset your password and provide new credentials</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-gray-900 mb-2 flex items-center">
+                        <i class="fas fa-headset text-green-600 mr-2"></i>
+                        Need Immediate Help?
+                    </h4>
+                    <p class="text-sm text-gray-700 mb-2">
+                        Contact your HR Department or IT Support for immediate assistance.
+                    </p>
+                    <div class="text-xs text-gray-600">
+                        <p><strong>Office Hours:</strong> Monday - Friday, 8:00 AM - 5:00 PM</p>
+                        <p><strong>Emergency:</strong> Contact your direct supervisor</p>
+                    </div>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex space-x-3">
+                    <button onclick="closeForgotPasswordModal()" 
+                            class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Login
+                    </button>
+                    <button onclick="copyContactInfo()" 
+                            class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105">
+                        <i class="fas fa-copy mr-2"></i>
+                        Copy Info
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -453,6 +549,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     this.classList.add('border-green-500');
                 }
             });
+        });
+
+        // Forgot Password Modal Functions
+        function openForgotPasswordModal() {
+            const modal = document.getElementById('forgotPasswordModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Trigger animation
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeForgotPasswordModal() {
+            const modal = document.getElementById('forgotPasswordModal');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        function copyContactInfo() {
+            const contactInfo = `Password Reset Request - NIA-HRIS System
+
+Please reset my password for the NIA-HRIS system.
+
+Username: [Your Username]
+Employee ID: [Your Employee ID]
+Department: [Your Department]
+
+Contact Information:
+- Office Hours: Monday - Friday, 8:00 AM - 5:00 PM
+- Emergency: Contact your direct supervisor
+
+Thank you for your assistance.`;
+
+            navigator.clipboard.writeText(contactInfo).then(() => {
+                // Show success feedback
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                alert('Contact information copied to clipboard!');
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('forgotPasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeForgotPasswordModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('forgotPasswordModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeForgotPasswordModal();
+                }
+            }
         });
     </script>
 </body>

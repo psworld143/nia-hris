@@ -3,16 +3,16 @@ session_start();
 require_once 'config/database.php';
 
 // Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized access']);
     exit();
 }
 
-// Get filter parameter (employee, faculty, or all)
+// Get filter parameter (employee or all)
 $filter = $_GET['filter'] ?? 'all';
 
-// Get employees from both tables
+// Get employees from employees table
 $employees = [];
 
 // Get employees from employees table (if filter allows)
@@ -27,7 +27,7 @@ if ($filter === 'all' || $filter === 'employee') {
 
     if ($employee_result) {
         while ($row = mysqli_fetch_assoc($employee_result)) {
-            $row['source_table'] = 'employee'; // Use singular table name to match create-leave-request.php
+            $row['source_table'] = 'employees'; // Use plural table name to match create-leave-request.php
             // Format employment type for display
             if ($row['employment_status'] && $row['employment_type']) {
                 $row['employment_display'] = $row['employment_status'] . ' ' . $row['employment_type'];
@@ -43,33 +43,6 @@ if ($filter === 'all' || $filter === 'employee') {
     }
 }
 
-// Get employees erom faculty table (if filter allows)
-if ($filter === 'all' || $filter === 'faculty') {
-    $faculty_query = "SELECT f.id, e.first_name, e.last_name, f.id as employee_id, e.department, 'faculty' as employee_type, f.position,
-                              fd.employment_type, fd.employment_status
-                      FROM employees f
-                      LEFT JOIN employee_details fd ON f.id = fd.employee_id
-                      WHERE f.is_active = 1 
-                      ORDER BY e.first_name, e.last_name";
-    $faculty_result = mysqli_query($conn, $faculty_query);
-
-    if ($faculty_result) {
-        while ($row = mysqli_fetch_assoc($faculty_result)) {
-            $row['source_table'] = 'faculty';
-            // Format employment type for display
-            if ($row['employment_status'] && $row['employment_type']) {
-                $row['employment_display'] = $row['employment_status'] . ' ' . $row['employment_type'];
-            } else if ($row['employment_type']) {
-                $row['employment_display'] = $row['employment_type'];
-            } else if ($row['employment_status']) {
-                $row['employment_display'] = $row['employment_status'];
-            } else {
-                $row['employment_display'] = 'Not Specified';
-            }
-            $employees[] = $row;
-        }
-    }
-}
 
 // Sort all employees by name
 usort($employees, function($a, $b) {

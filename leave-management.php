@@ -817,13 +817,10 @@ include 'includes/header.php';
                             <form id="createLeaveForm" class="space-y-6 pb-4">
                 <!-- Employee/Employee Selection Buttons (shown when no URL filter) -->
                 <div id="employeeTypeSelection" class="mb-8 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-4">Select Type</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-4">Select Employee Type</label>
                     <div class="flex space-x-4">
                         <button type="button" id="selectEmployeeBtn" onclick="selectEmployeeType('employee')" class="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors">
                             <i class="fas fa-users mr-2"></i>Employees
-                        </button>
-                        <button type="button" id="selectEmployeeBtn" onclick="selectEmployeeType('employee')" class="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors">
-                            <i class="fas fa-chalkboard-teacher mr-2"></i>Employee
                         </button>
                     </div>
                 </div>
@@ -1246,18 +1243,18 @@ function openCreateLeaveModal() {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFilter = urlParams.get('tab');
     
-    if (tabFilter === 'employee' || tabFilter === 'employee') {
+    if (tabFilter === 'employee') {
         // URL has filter - hide buttons and load filtered employees
         document.getElementById('employeeTypeSelection').classList.add('hidden');
         currentEmployeeFilter = tabFilter;
         updateEmployeeLabel(tabFilter);
         loadEmployees(tabFilter);
     } else {
-        // No URL filter - show selection buttons
+        // No URL filter - show selection buttons and auto-select employees
         document.getElementById('employeeTypeSelection').classList.remove('hidden');
         resetEmployeeTypeButtons();
-        // Don't load employees yet - wait for user selection
-        clearEmployeeDropdown();
+        // Auto-select employees since it's the only option
+        selectEmployeeType('employee');
     }
     
     loadLeaveTypes();
@@ -1280,53 +1277,43 @@ function selectEmployeeType(type) {
 
 function updateEmployeeTypeButtons(selectedType) {
     const employeeBtn = document.getElementById('selectEmployeeBtn');
-    const employeeBtn = document.getElementById('selectEmployeeBtn');
     
-    // Reset both buttons
-    employeeBtn.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
-    employeeBtn.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+    // Reset button
+    employeeBtn.className = 'flex-1 px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors';
     
-    // Highlight selected button
+    // Highlight selected button (only employee now)
     if (selectedType === 'employee') {
-        employeeBtn.className = 'flex-1 px-4 py-2 border border-green-500 rounded-md text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
-    } else if (selectedType === 'employee') {
-        employeeBtn.className = 'flex-1 px-4 py-2 border border-green-500 rounded-md text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+        employeeBtn.className = 'flex-1 px-6 py-3 border border-green-500 rounded-lg text-sm font-medium text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors';
     }
 }
 
 function resetEmployeeTypeButtons() {
     const employeeBtn = document.getElementById('selectEmployeeBtn');
-    const employeeBtn = document.getElementById('selectEmployeeBtn');
     
-    employeeBtn.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
-    employeeBtn.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+    employeeBtn.className = 'flex-1 px-6 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors';
 }
 
 function updateEmployeeLabel(type) {
     const label = document.getElementById('employeeLabel');
-    if (type === 'employee') {
-        label.textContent = 'Employee';
-    } else if (type === 'employee') {
-        label.textContent = 'Employee Member';
-    } else {
-        label.textContent = 'Employee';
-    }
+    label.textContent = 'Employee';
 }
 
 function clearEmployeeDropdown() {
     const select = document.getElementById('employee_id');
-    select.innerHTML = '<option value="">Select Employee Type First</option>';
+    select.innerHTML = '<option value="">Select Employee</option>';
 }
 
 function loadEmployees(filter = 'all') {
     const url = filter === 'all' ? 'get-employees.php' : `get-employees.php?filter=${filter}`;
     
+    console.log('Loading employees from:', url);
+    
     fetch(url)
         .then(response => response.json())
         .then(data => {
+            console.log('Employees data received:', data);
             const select = document.getElementById('employee_id');
-            const selectText = filter === 'employee' ? 'Select Employee Member' : 'Select Employee';
-            select.innerHTML = `<option value="">${selectText}</option>`;
+            select.innerHTML = '<option value="">Select Employee</option>';
             
             data.forEach(employee => {
                 const option = document.createElement('option');
@@ -1360,20 +1347,39 @@ function loadEmployees(filter = 'all') {
 }
 
 function loadLeaveTypes() {
+    console.log('Loading leave types...');
+    
     fetch('get-leave-types.php')
-        .then(response => response.json())
+        .then(response => {
+            console.log('Leave types response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Leave types data received:', data);
             const select = document.getElementById('leave_type_id');
             select.innerHTML = '<option value="">Select Leave Type</option>';
             
-            data.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type.id;
-                option.textContent = type.name;
-                select.appendChild(option);
-            });
+            if (data && Array.isArray(data)) {
+                data.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.id;
+                    option.textContent = type.name;
+                    select.appendChild(option);
+                });
+                console.log(`Loaded ${data.length} leave types`);
+            } else {
+                console.log('No leave types found or invalid data format');
+                select.innerHTML = '<option value="">No leave types available</option>';
+            }
         })
-        .catch(error => console.error('Error loading leave types:', error));
+        .catch(error => {
+            console.error('Error loading leave types:', error);
+            const select = document.getElementById('leave_type_id');
+            select.innerHTML = '<option value="">Error loading leave types</option>';
+        });
 }
 
 // Handle employee selection change
@@ -1449,17 +1455,38 @@ function loadEmployeeLeaveDetails(employeeId, employeeType) {
         fetch(`get-leave-allowance-details.php?employee_id=${employeeId}&employee_type=${employeeType}&year=${currentYear}`),
         fetch(`get-leave-history.php?employee_id=${employeeId}&employee_type=${employeeType}&all_time=true&limit=50`)
     ])
-    .then(responses => Promise.all(responses.map(response => response.json())))
+    .then(responses => {
+        // Check if responses are ok before parsing JSON
+        const allowanceResponse = responses[0];
+        const historyResponse = responses[1];
+        
+        const allowancePromise = allowanceResponse.ok ? 
+            allowanceResponse.json() : 
+            Promise.resolve({success: false, error: `HTTP ${allowanceResponse.status}`});
+            
+        const historyPromise = historyResponse.ok ? 
+            historyResponse.json() : 
+            Promise.resolve({success: false, error: `HTTP ${historyResponse.status}`});
+        
+        return Promise.all([allowancePromise, historyPromise]);
+    })
     .then(([allowanceData, historyData]) => {
         // Hide loading state
         document.getElementById('loadingDetails').classList.add('hidden');
         
+        console.log('Allowance data:', allowanceData);
+        console.log('History data:', historyData);
+        
         if (allowanceData.success) {
             displayLeaveAllowanceDetails(allowanceData);
+        } else {
+            console.error('Allowance data error:', allowanceData.error);
         }
         
         if (historyData.success) {
             displayLeaveHistory(historyData);
+        } else {
+            console.error('History data error:', historyData.error);
         }
     })
     .catch(error => {
@@ -1672,10 +1699,16 @@ function displayLeaveAllowanceDetails(data) {
 // Display leave history
 function displayLeaveHistory(data) {
     const historyCard = document.getElementById('leaveHistoryCard');
-    const stats = data.statistics;
-    const history = data.leave_history;
+    const history = data.leave_history || [];
     
-    // Year removed from title since we show all-time history now
+    // Calculate statistics from the history data
+    const stats = {
+        total_requests: history.length,
+        approved_requests: history.filter(req => req.status === 'approved_by_hr').length,
+        total_approved_days: history
+            .filter(req => req.status === 'approved_by_hr')
+            .reduce((sum, req) => sum + (parseInt(req.total_days) || 0), 0)
+    };
     
     // Update statistics
     document.getElementById('totalRequests').textContent = stats.total_requests || 0;

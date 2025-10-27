@@ -4,7 +4,9 @@
  * Processes multiple DTR card uploads per payroll period
  */
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
@@ -112,9 +114,6 @@ foreach ($employee_ids as $index => $employee_id) {
         
         if (mysqli_stmt_execute($stmt)) {
             $uploaded_count++;
-            
-            // Log activity
-            logActivity('UPLOAD_DTR_CARD', "Uploaded DTR card for employee ID: $employee_id, Period ID: $payroll_period_id", $conn);
         } else {
             $errors[] = "Database error for employee ID: $employee_id";
             // Delete uploaded file if database insert failed

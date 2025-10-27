@@ -5,6 +5,15 @@ require_once 'includes/functions.php';
 
 // Check if user is logged in and has appropriate role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'super_admin'])) {
+    // Debug information
+    $debug_info = "Session Debug:\n";
+    $debug_info .= "User ID: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET') . "\n";
+    $debug_info .= "Role: " . (isset($_SESSION['role']) ? $_SESSION['role'] : 'NOT SET') . "\n";
+    $debug_info .= "Username: " . (isset($_SESSION['username']) ? $_SESSION['username'] : 'NOT SET') . "\n";
+    
+    // Log the debug info
+    error_log("Add Employee Access Denied: " . $debug_info);
+    
     header('Location: index.php');
     exit();
 }

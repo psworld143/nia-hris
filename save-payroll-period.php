@@ -1,10 +1,12 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
 // Check authentication
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     header('Location: index.php');
     exit();
 }
@@ -28,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_stmt_execute($stmt)) {
             $_SESSION['success_message'] = 'Payroll period created successfully!';
         } else {
-            $_SESSION['error_message'] = 'Failed to create payroll period.';
+            $_SESSION['error_message'] = 'Failed to create payroll period: ' . mysqli_error($conn);
         }
     } elseif ($action === 'edit') {
         $period_id = (int)$_POST['period_id'];
@@ -42,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (mysqli_stmt_execute($stmt)) {
             $_SESSION['success_message'] = 'Payroll period updated successfully!';
         } else {
-            $_SESSION['error_message'] = 'Failed to update payroll period.';
+            $_SESSION['error_message'] = 'Failed to update payroll period: ' . mysqli_error($conn);
         }
     }
 }

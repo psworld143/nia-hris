@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
@@ -210,17 +212,23 @@ include 'includes/header.php';
                         <?php echo date('M d, Y', strtotime($user['created_at'])); ?>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)" 
-                                class="text-green-600 hover:text-green-900 mr-3">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
-                        <button onclick="toggleUserStatus(<?php echo $user['id']; ?>, '<?php echo $user['status']; ?>', '<?php echo htmlspecialchars($user['username']); ?>')" 
-                                class="<?php echo $user['status'] === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'; ?>">
-                            <i class="fas fa-<?php echo $user['status'] === 'active' ? 'ban' : 'check-circle'; ?>"></i>
-                            <?php echo $user['status'] === 'active' ? 'Deactivate' : 'Activate'; ?>
-                        </button>
-                        <?php endif; ?>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="editUser(<?php echo htmlspecialchars(json_encode($user)); ?>)" 
+                                    class="text-green-600 hover:text-green-900">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button onclick="resetUserPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['username']); ?>')" 
+                                    class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-key"></i> Reset Password
+                            </button>
+                            <?php if ($user['id'] != $_SESSION['user_id']): ?>
+                            <button onclick="toggleUserStatus(<?php echo $user['id']; ?>, '<?php echo $user['status']; ?>', '<?php echo htmlspecialchars($user['username']); ?>')" 
+                                    class="<?php echo $user['status'] === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'; ?>">
+                                <i class="fas fa-<?php echo $user['status'] === 'active' ? 'ban' : 'check-circle'; ?>"></i>
+                                <?php echo $user['status'] === 'active' ? 'Deactivate' : 'Activate'; ?>
+                            </button>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -328,6 +336,163 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Password Reset Confirmation Modal -->
+<div id="passwordResetModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="passwordResetModalContent">
+        <div class="p-6">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-key text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900">Reset Password</h3>
+                        <p class="text-sm text-gray-600">Confirm Password Reset</p>
+                    </div>
+                </div>
+                <button onclick="closePasswordResetModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="mb-6">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-yellow-900 mb-2">Password Reset Warning</h4>
+                            <p class="text-yellow-800 text-sm leading-relaxed">
+                                You are about to reset the password for user <strong id="resetUsername"></strong>. 
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                        <i class="fas fa-key text-blue-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-900">New Password</p>
+                            <p class="text-sm text-gray-600">Password will be reset to: <strong class="text-blue-600">NIA2025</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                        <i class="fas fa-shield-alt text-green-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-900">Security Notice</p>
+                            <p class="text-sm text-gray-600">User will need to change this password on next login</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center p-3 bg-purple-50 rounded-lg">
+                        <i class="fas fa-bell text-purple-600 mr-3"></i>
+                        <div>
+                            <p class="font-medium text-gray-900">User Notification</p>
+                            <p class="text-sm text-gray-600">Please inform the user of the new password immediately</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="flex space-x-3">
+                <button onclick="closePasswordResetModal()" 
+                        class="flex-1 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </button>
+                <button onclick="confirmPasswordReset()" 
+                        class="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105">
+                    <i class="fas fa-key mr-2"></i>
+                    Reset Password
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Reset Success Modal -->
+<div id="passwordResetSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="passwordResetSuccessModalContent" style="transform: scale(0.95); opacity: 0;">
+        <div class="p-6">
+            <!-- Modal Header -->
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-white text-2xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Password Reset Successful!</h3>
+                <p class="text-gray-600">The password has been reset successfully</p>
+            </div>
+
+            <!-- Success Content -->
+            <div class="mb-6">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-green-600 mt-1 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-green-900 mb-2">Reset Complete</h4>
+                            <p class="text-green-800 text-sm leading-relaxed">
+                                The password has been successfully reset for the user. Please provide them with the new credentials below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credentials Display -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                        <i class="fas fa-key text-blue-600 mr-2"></i>
+                        New Login Credentials
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-2 bg-white rounded border">
+                            <span class="text-sm font-medium text-gray-600">Username:</span>
+                            <span class="text-sm font-semibold text-gray-900" id="successUsername"></span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-white rounded border">
+                            <span class="text-sm font-medium text-gray-600">New Password:</span>
+                            <span class="text-sm font-bold text-blue-600" id="successPassword">NIA2025</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Important Notice -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                        <div>
+                            <h4 class="font-semibold text-yellow-900 mb-2">Important Notice</h4>
+                            <ul class="text-yellow-800 text-sm space-y-1">
+                                <li>• User must change password on next login</li>
+                                <li>• Provide credentials securely to the user</li>
+                                <li>• Password reset has been logged for audit</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Actions -->
+            <div class="flex space-x-3">
+                <button onclick="copyCredentials()" 
+                        class="flex-1 bg-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-copy mr-2"></i>
+                    Copy Credentials
+                </button>
+                <button onclick="closePasswordResetSuccessModal()" 
+                        class="flex-1 bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors">
+                    <i class="fas fa-check mr-2"></i>
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function openAddUserModal() {
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus text-green-600 mr-2"></i>Add New User';
@@ -419,5 +584,220 @@ function toggleUserStatus(userId, currentStatus, username) {
         alert('Error updating user status');
     });
 }
+
+function resetUserPassword(userId, username) {
+    // Store the user data for the confirmation
+    window.pendingPasswordReset = { userId: userId, username: username };
+    
+    // Update the modal content
+    document.getElementById('resetUsername').textContent = username;
+    
+    // Show the modal
+    openPasswordResetModal();
+}
+
+function openPasswordResetModal() {
+    const modal = document.getElementById('passwordResetModal');
+    const modalContent = document.getElementById('passwordResetModalContent');
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Trigger animation
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closePasswordResetModal() {
+    const modal = document.getElementById('passwordResetModal');
+    const modalContent = document.getElementById('passwordResetModalContent');
+    
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+        
+        // Clear pending reset data
+        window.pendingPasswordReset = null;
+    }, 300);
+}
+
+function confirmPasswordReset() {
+    if (!window.pendingPasswordReset) return;
+    
+    const { userId, username } = window.pendingPasswordReset;
+    
+    // Close the modal first
+    closePasswordResetModal();
+    
+    // Show loading state
+    const resetBtn = event.target;
+    const originalText = resetBtn.innerHTML;
+    resetBtn.disabled = true;
+    resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Resetting...';
+    
+    fetch('reset-user-password.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Show success modal
+            showPasswordResetSuccess(username);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Password reset error:', error);
+        alert('Error resetting password: ' + error.message);
+    })
+    .finally(() => {
+        resetBtn.disabled = false;
+        resetBtn.innerHTML = originalText;
+    });
+}
+
+function showPasswordResetSuccess(username) {
+    console.log('showPasswordResetSuccess called with username:', username);
+    
+    // Update the success modal content
+    const usernameElement = document.getElementById('successUsername');
+    if (usernameElement) {
+        usernameElement.textContent = username;
+        console.log('Username element updated');
+    } else {
+        console.error('Username element not found');
+    }
+    
+    // Show the success modal
+    openPasswordResetSuccessModal();
+}
+
+function openPasswordResetSuccessModal() {
+    console.log('openPasswordResetSuccessModal called');
+    
+    const modal = document.getElementById('passwordResetSuccessModal');
+    const modalContent = document.getElementById('passwordResetSuccessModalContent');
+    
+    if (!modal) {
+        console.error('Success modal element not found');
+        return;
+    }
+    
+    if (!modalContent) {
+        console.error('Success modal content element not found');
+        return;
+    }
+    
+    console.log('Modal elements found, showing modal');
+    
+    // Show modal using both class and style
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
+    
+    // Trigger animation
+    setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+        modalContent.style.transform = 'scale(1)';
+        modalContent.style.opacity = '1';
+        console.log('Modal animation triggered');
+    }, 10);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+function closePasswordResetSuccessModal() {
+    const modal = document.getElementById('passwordResetSuccessModal');
+    const modalContent = document.getElementById('passwordResetSuccessModalContent');
+    
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modalContent.classList.add('scale-95', 'opacity-0');
+    modalContent.style.transform = 'scale(0.95)';
+    modalContent.style.opacity = '0';
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        
+        // Reload the page to show updated data
+        window.location.reload();
+    }, 300);
+}
+
+function copyCredentials() {
+    const username = document.getElementById('successUsername').textContent;
+    const password = document.getElementById('successPassword').textContent;
+    
+    const credentials = `Username: ${username}\nPassword: ${password}`;
+    
+    navigator.clipboard.writeText(credentials).then(() => {
+        // Show success feedback
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+        button.classList.add('bg-green-500', 'hover:bg-green-600');
+        button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-500', 'hover:bg-green-600');
+            button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+        }, 2000);
+    }).catch(() => {
+        // Fallback for older browsers
+        alert('Credentials copied to clipboard!');
+    });
+}
+
+// Close password reset modal when clicking outside
+document.getElementById('passwordResetModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePasswordResetModal();
+    }
+});
+
+// Close password reset modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const passwordResetModal = document.getElementById('passwordResetModal');
+        const successModal = document.getElementById('passwordResetSuccessModal');
+        
+        if (!passwordResetModal.classList.contains('hidden')) {
+            closePasswordResetModal();
+        } else if (!successModal.classList.contains('hidden')) {
+            closePasswordResetSuccessModal();
+        }
+    }
+});
+
+// Close success modal when clicking outside
+document.getElementById('passwordResetSuccessModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePasswordResetSuccessModal();
+    }
+});
 </script>
 

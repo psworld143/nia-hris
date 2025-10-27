@@ -326,10 +326,51 @@ if (isset($_SESSION['user_id'])) {
                 <div class="space-y-6 pt-4">
                     <!-- Dashboard Section -->
                     <div class="animate-fadeInUp" style="animation-delay: 0.1s;">
-                        <a href="index.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'index.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                            <i class="fas fa-tachometer-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Dashboard
-                        </a>
+                        <?php if ($_SESSION['role'] === 'employee'): ?>
+                            <a href="employee-dashboard.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'employee-dashboard.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-tachometer-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Dashboard
+                            </a>
+                        <?php else: ?>
+                            <a href="index.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'index.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-tachometer-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Dashboard
+                            </a>
+                        <?php endif; ?>
                     </div>
+
+                    <?php if ($_SESSION['role'] === 'employee'): ?>
+                    <!-- Employee Section -->
+                    <div class="animate-fadeInUp" style="animation-delay: 0.15s;">
+                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Personal</h3>
+                        <div class="space-y-1">
+                            <a href="employee-profile.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'employee-profile.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-user mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>My Profile
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Leave Management Section -->
+                    <div class="animate-fadeInUp" style="animation-delay: 0.2s;">
+                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Leave Management</h3>
+                        <div class="space-y-1">
+                            <a href="create-leave-request-form.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'create-leave-request-form.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-calendar-plus mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Request Leave
+                            </a>
+                            <a href="employee-leave-history.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'employee-leave-history.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-history mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Leave History
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Payroll Section -->
+                    <div class="animate-fadeInUp" style="animation-delay: 0.25s;">
+                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Payroll</h3>
+                        <div class="space-y-1">
+                            <a href="employee-payslips.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'employee-payslips.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
+                                <i class="fas fa-file-invoice-dollar mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>My Payslips
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <?php if (in_array($_SESSION['role'], ['super_admin', 'nurse'])): ?>
                     <!-- Medical Records Section (Super Admin & Nurse) -->

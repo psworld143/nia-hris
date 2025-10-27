@@ -177,10 +177,10 @@ include 'includes/header.php';
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-medium text-gray-900">Salary Structures</h3>
         <div class="flex space-x-2">
-            <button class="px-4 py-2 text-sm bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors">
+            <button onclick="exportSalaryStructures()" class="px-4 py-2 text-sm bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors">
                 <i class="fas fa-download mr-1"></i>Export
             </button>
-            <button class="px-4 py-2 text-sm bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors">
+            <button onclick="printSalaryStructures()" class="px-4 py-2 text-sm bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors">
                 <i class="fas fa-print mr-1"></i>Print
             </button>
         </div>
@@ -473,6 +473,92 @@ setTimeout(function() {
         message.style.display = 'none';
     });
 }, 5000);
+
+// Export functionality
+function exportSalaryStructures() {
+    // Get table data
+    const table = document.querySelector('.min-w-full');
+    const rows = table.querySelectorAll('tr');
+    
+    // Create CSV content
+    let csvContent = '';
+    
+    // Add headers
+    const headerRow = rows[0];
+    const headers = headerRow.querySelectorAll('th');
+    const headerTexts = Array.from(headers).map(header => `"${header.textContent.trim()}"`);
+    csvContent += headerTexts.join(',') + '\n';
+    
+    // Add data rows
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const cells = row.querySelectorAll('td');
+        const cellTexts = Array.from(cells).map(cell => {
+            // Clean up the text content
+            let text = cell.textContent.trim();
+            // Remove action buttons text
+            text = text.replace(/Edit|Delete/g, '').trim();
+            return `"${text}"`;
+        });
+        csvContent += cellTexts.join(',') + '\n';
+    }
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `salary_structures_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Print functionality
+function printSalaryStructures() {
+    // Get table data
+    const table = document.querySelector('.min-w-full');
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    // Create print-friendly HTML
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Salary Structures Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1 { color: #333; text-align: center; margin-bottom: 30px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                .print-date { text-align: right; margin-bottom: 20px; color: #666; }
+                @media print {
+                    body { margin: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Salary Structures Report</h1>
+            <div class="print-date">Generated on: ${new Date().toLocaleDateString()}</div>
+            ${table.outerHTML}
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    
+    // Wait for content to load, then print
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+    };
+}
 </script>
 
 <style>

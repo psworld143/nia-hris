@@ -10,6 +10,7 @@ define('ROLE_ADMIN', 'admin');
 define('ROLE_HR_MANAGER', 'hr_manager');
 define('ROLE_HR_STAFF', 'human_resource');
 define('ROLE_NURSE', 'nurse');
+define('ROLE_EMPLOYEE', 'employee');
 
 /**
  * Check if user has a specific role
@@ -61,6 +62,13 @@ function isHRStaff() {
  */
 function isNurse() {
     return hasRole(ROLE_NURSE);
+}
+
+/**
+ * Check if user is Employee
+ */
+function isEmployee() {
+    return hasRole(ROLE_EMPLOYEE);
 }
 
 /**
@@ -166,6 +174,34 @@ function canConductPerformanceReviews() {
  */
 function canManageTraining() {
     return hasAnyRole([ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_HR_MANAGER]);
+}
+
+/**
+ * Check if user can view own profile
+ */
+function canViewOwnProfile() {
+    return hasAnyRole([ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_HR_MANAGER, ROLE_HR_STAFF, ROLE_NURSE, ROLE_EMPLOYEE]);
+}
+
+/**
+ * Check if user can view own leave requests
+ */
+function canViewOwnLeaveRequests() {
+    return hasAnyRole([ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_HR_MANAGER, ROLE_HR_STAFF, ROLE_EMPLOYEE]);
+}
+
+/**
+ * Check if user can create leave requests
+ */
+function canCreateLeaveRequests() {
+    return hasAnyRole([ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_HR_MANAGER, ROLE_HR_STAFF, ROLE_EMPLOYEE]);
+}
+
+/**
+ * Check if user can view own payslips
+ */
+function canViewOwnPayslips() {
+    return hasAnyRole([ROLE_SUPER_ADMIN, ROLE_ADMIN, ROLE_HR_MANAGER, ROLE_HR_STAFF, ROLE_EMPLOYEE]);
 }
 
 /**
@@ -305,6 +341,27 @@ function getRolePermissions($role) {
             'manage_leave' => false,
             'conduct_performance_reviews' => false,
             'manage_training' => false,
+        ],
+        ROLE_EMPLOYEE => [
+            'view_employees' => false,
+            'add_employees' => false,
+            'edit_employees' => false,
+            'delete_employees' => false,
+            'view_medical_records' => false,
+            'update_medical_records' => false,
+            'manage_salary' => false,
+            'process_payroll' => false,
+            'manage_users' => false,
+            'access_settings' => false,
+            'view_reports' => false,
+            'manage_departments' => false,
+            'manage_leave' => false,
+            'conduct_performance_reviews' => false,
+            'manage_training' => false,
+            'view_own_profile' => true,
+            'view_own_leave_requests' => true,
+            'create_leave_requests' => true,
+            'view_own_payslips' => true,
         ],
     ];
     

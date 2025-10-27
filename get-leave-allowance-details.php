@@ -22,7 +22,7 @@ if (!$conn) {
 mysqli_set_charset($conn, "utf8mb4");
 
 // Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     ob_clean();
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized access']);
@@ -43,7 +43,7 @@ if (empty($employee_id) || empty($employee_type)) {
 }
 
 // Validate employee type
-if (!in_array($employee_type, ['employee', 'faculty'])) {
+if (!in_array($employee_type, ['employees', 'employee'])) {
     ob_clean();
     http_response_code(400);
     echo json_encode(['error' => 'Invalid employee type']);
@@ -60,7 +60,7 @@ if (!is_numeric($employee_id)) {
 
 try {
     // Get employee basic info
-    if ($employee_type === 'employee') {
+    if ($employee_type === 'employees' || $employee_type === 'employee') {
         $info_query = "SELECT e.*, ed.employment_type, ed.employment_status, 
                               er.regularization_date, rs.name as regularization_status_name
                        FROM employees e
@@ -75,7 +75,7 @@ try {
                        LEFT JOIN employee_details fd ON f.id = fd.employee_id
                        LEFT JOIN employee_regularization fr ON f.id = fr.employee_id
                        LEFT JOIN regularization_status rs ON fr.current_status_id = rs.id
-                       WHERE e.id = ? AND f.is_active = 1";
+                       WHERE f.id = ? AND f.is_active = 1";
     }
     
     $info_stmt = mysqli_prepare($conn, $info_query);

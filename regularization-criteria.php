@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once 'config/database.php';
 require_once 'includes/functions.php';
@@ -15,12 +17,12 @@ $page_title = 'Regularization Criteria Management';
 
 // Get user information
 $user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
-$first_name = $_SESSION['first_name'];
-$last_name = $_SESSION['last_name'];
+$username = $_SESSION['username'] ?? '';
+$first_name = $_SESSION['first_name'] ?? '';
+$last_name = $_SESSION['last_name'] ?? '';
 
 // Handle AJAX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
+if ((php_sapi_name() === 'cli' || ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') && isset($_POST['ajax'])) {
     header('Content-Type: application/json');
     
     try {
@@ -35,16 +37,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                 
                 $training_required = isset($_POST['training_completion_required']) ? 1 : 0;
                 $is_active = 1;
-                mysqli_stmt_bind_param($stmt, "ssiiddiiisii", 
-                    $_POST['criteria_name'],
-                    $_POST['criteria_description'],
-                    $_POST['minimum_months'],
-                    $_POST['performance_rating_min'],
-                    $_POST['attendance_percentage_min'],
-                    $_POST['disciplinary_issues_max'],
+                
+                $criteria_name = $_POST['criteria_name'];
+                $criteria_description = $_POST['criteria_description'];
+                $minimum_months = intval($_POST['minimum_months']);
+                $performance_rating_min = floatval($_POST['performance_rating_min']);
+                $attendance_percentage_min = floatval($_POST['attendance_percentage_min']);
+                $disciplinary_issues_max = intval($_POST['disciplinary_issues_max']);
+                $evaluation_score_min = floatval($_POST['evaluation_score_min']);
+                $additional_requirements = $_POST['additional_requirements'];
+                
+                mysqli_stmt_bind_param($stmt, "ssiiddiiisi", 
+                    $criteria_name,
+                    $criteria_description,
+                    $minimum_months,
+                    $performance_rating_min,
+                    $attendance_percentage_min,
+                    $disciplinary_issues_max,
                     $training_required,
-                    $_POST['evaluation_score_min'],
-                    $_POST['additional_requirements'],
+                    $evaluation_score_min,
+                    $additional_requirements,
                     $user_id,
                     $is_active
                 );
@@ -63,18 +75,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
                     WHERE id = ?");
                 
                 $training_required = isset($_POST['training_completion_required']) ? 1 : 0;
+                
+                $criteria_name = $_POST['criteria_name'];
+                $criteria_description = $_POST['criteria_description'];
+                $minimum_months = intval($_POST['minimum_months']);
+                $performance_rating_min = floatval($_POST['performance_rating_min']);
+                $attendance_percentage_min = floatval($_POST['attendance_percentage_min']);
+                $disciplinary_issues_max = intval($_POST['disciplinary_issues_max']);
+                $evaluation_score_min = floatval($_POST['evaluation_score_min']);
+                $additional_requirements = $_POST['additional_requirements'];
+                $criteria_id = intval($_POST['id']);
+                
                 mysqli_stmt_bind_param($stmt, "ssiiddiisii", 
-                    $_POST['criteria_name'],
-                    $_POST['criteria_description'],
-                    $_POST['minimum_months'],
-                    $_POST['performance_rating_min'],
-                    $_POST['attendance_percentage_min'],
-                    $_POST['disciplinary_issues_max'],
+                    $criteria_name,
+                    $criteria_description,
+                    $minimum_months,
+                    $performance_rating_min,
+                    $attendance_percentage_min,
+                    $disciplinary_issues_max,
                     $training_required,
-                    $_POST['evaluation_score_min'],
-                    $_POST['additional_requirements'],
+                    $evaluation_score_min,
+                    $additional_requirements,
                     $user_id,
-                    $_POST['id']
+                    $criteria_id
                 );
                 
                 mysqli_stmt_execute($stmt);

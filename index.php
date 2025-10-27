@@ -9,9 +9,15 @@ require_once 'includes/functions.php';
 require_once 'includes/id_encryption.php';
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager', 'human_resource', 'nurse'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager', 'human_resource', 'nurse', 'employee'])) {
     // Redirect to login page
     header('Location: login.php');
+    exit();
+}
+
+// Redirect employees to their dedicated dashboard
+if ($_SESSION['role'] === 'employee') {
+    header('Location: employee-dashboard.php');
     exit();
 }
 

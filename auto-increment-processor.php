@@ -77,17 +77,17 @@ try {
     // Process faculty second
     $faculty_query = "SELECT 
         f.id as employee_id,
-        e.employee_id as emp_id,
-        e.first_name,
-        e.last_name,
+        f.employee_id as emp_id,
+        f.first_name,
+        f.last_name,
         f.position,
-        e.department,
+        f.department,
         'faculty' as employee_type,
-        fd.date_of_hire as hire_date,
-        ed.basic_salary,
-        DATEDIFF(NOW(), fd.date_of_hire) / 365.25 as years_service,
-        COALESCE(last_inc.last_increment_date, fd.date_of_hire) as reference_date,
-        DATEDIFF(NOW(), COALESCE(last_inc.last_increment_date, fd.date_of_hire)) / 365.25 as years_since_last_increment,
+        f.hire_date,
+        fd.basic_salary,
+        DATEDIFF(NOW(), f.hire_date) / 365.25 as years_service,
+        COALESCE(last_inc.last_increment_date, f.hire_date) as reference_date,
+        DATEDIFF(NOW(), COALESCE(last_inc.last_increment_date, f.hire_date)) / 365.25 as years_since_last_increment,
         ss.id as salary_structure_id,
         ss.increment_percentage,
         ss.incrementation_amount,
@@ -105,11 +105,11 @@ try {
         GROUP BY employee_id
     ) last_inc ON f.id = last_inc.employee_id
     WHERE f.is_active = 1 
-    AND fd.date_of_hire IS NOT NULL
+    AND f.hire_date IS NOT NULL
     AND ss.id IS NOT NULL  -- Must have a salary structure
-    AND DATEDIFF(NOW(), fd.date_of_hire) >= (ss.incrementation_frequency_years * 365.25)  -- At least required years of service
-    AND DATEDIFF(NOW(), COALESCE(last_inc.last_increment_date, fd.date_of_hire)) >= (ss.incrementation_frequency_years * 365.25)  -- At least required years since last increment
-    ORDER BY fd.date_of_hire";
+    AND DATEDIFF(NOW(), f.hire_date) >= (ss.incrementation_frequency_years * 365.25)  -- At least required years of service
+    AND DATEDIFF(NOW(), COALESCE(last_inc.last_increment_date, f.hire_date)) >= (ss.incrementation_frequency_years * 365.25)  -- At least required years since last increment
+    ORDER BY f.hire_date";
     
     // Process employees
     $employee_result = mysqli_query($conn, $employee_query);

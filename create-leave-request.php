@@ -2,7 +2,10 @@
 // Prevent any HTML output before JSON response
 ob_start();
 
-session_start();
+// Don't start session if already active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once 'config/database.php';
 
 // Set JSON response header early
@@ -16,8 +19,8 @@ try {
     error_log("User ID: " . ($_SESSION['user_id'] ?? 'Not set'));
     error_log("User Role: " . ($_SESSION['role'] ?? 'Not set'));
 
-// Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+// Check if user is logged in and has appropriate role
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'employee'])) {
     error_log("❌ AUTHORIZATION ERROR: Unauthorized access attempt");
     ob_clean(); // Clear any output buffer
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
@@ -38,6 +41,25 @@ $start_date = $_POST['start_date'] ?? '';
 $end_date = $_POST['end_date'] ?? '';
 $reason = $_POST['reason'] ?? '';
 
+// For employee role, automatically determine employee_id from session
+if ($_SESSION['role'] === 'employee' && empty($employee_id)) {
+    // Get employee ID for current user
+    $user_email_query = "SELECT email FROM users WHERE id = ?";
+    $user_email_stmt = mysqli_prepare($conn, $user_email_query);
+    mysqli_stmt_bind_param($user_email_stmt, "i", $_SESSION['user_id']);
+    mysqli_stmt_execute($user_email_stmt);
+    $user_email = mysqli_fetch_assoc(mysqli_stmt_get_result($user_email_stmt))['email'] ?? '';
+    
+    // Get employee ID for this user
+    $emp_query = "SELECT id FROM employees WHERE email = ? AND is_active = 1";
+    $emp_stmt = mysqli_prepare($conn, $emp_query);
+    mysqli_stmt_bind_param($emp_stmt, "s", $user_email);
+    mysqli_stmt_execute($emp_stmt);
+    $employee_id = mysqli_fetch_assoc(mysqli_stmt_get_result($emp_stmt))['id'] ?? '';
+    
+    error_log("Employee self-service request - Auto-determined Employee ID: " . $employee_id);
+}
+
 // Log received form data
 error_log("Form Data Received:");
 error_log("  Employee ID: " . $employee_id);
@@ -47,15 +69,22 @@ error_log("  End Date: " . $end_date);
 error_log("  Reason: " . substr($reason, 0, 100) . (strlen($reason) > 100 ? '...' : ''));
 
 // Validate required fields
-if (empty($employee_id) || empty($leave_type_id) || empty($start_date) || empty($end_date) || empty($reason)) {
+if (empty($leave_type_id) || empty($start_date) || empty($end_date) || empty($reason)) {
     error_log("❌ VALIDATION ERROR: Missing required fields");
-    error_log("  Employee ID empty: " . (empty($employee_id) ? 'Yes' : 'No'));
     error_log("  Leave Type ID empty: " . (empty($leave_type_id) ? 'Yes' : 'No'));
     error_log("  Start Date empty: " . (empty($start_date) ? 'Yes' : 'No'));
     error_log("  End Date empty: " . (empty($end_date) ? 'Yes' : 'No'));
     error_log("  Reason empty: " . (empty($reason) ? 'Yes' : 'No'));
     ob_clean(); // Clear any output buffer
     echo json_encode(['success' => false, 'message' => 'All fields are required']);
+    exit();
+}
+
+// Additional validation for HR users - they must provide employee_id
+if ($_SESSION['role'] !== 'employee' && empty($employee_id)) {
+    error_log("❌ VALIDATION ERROR: HR users must provide employee_id");
+    ob_clean(); // Clear any output buffer
+    echo json_encode(['success' => false, 'message' => 'Employee ID is required']);
     exit();
 }
 
@@ -84,11 +113,11 @@ error_log("  Total Days: " . $total_days);
 $employee = null;
 $source_table = null;
 
-// First check employees table - using COLLATE to prevent collation mismatch
+// First check employees table
 error_log("Checking employees table for ID: " . $employee_id);
-$employee_query = "SELECT e.*, dh.id as department_head_id 
+$employee_query = "SELECT e.*, d.name as department_name 
                    FROM employees e 
-                   LEFT JOIN department_heads dh ON e.department COLLATE utf8mb4_general_ci = dh.department COLLATE utf8mb4_general_ci
+                   LEFT JOIN departments d ON e.department_id = d.id
                    WHERE e.id = ? AND e.is_active = 1";
 $employee_stmt = mysqli_prepare($conn, $employee_query);
 if (!$employee_stmt) {
@@ -101,30 +130,10 @@ $employee_result = mysqli_stmt_get_result($employee_stmt);
 
 if (mysqli_num_rows($employee_result) > 0) {
     $employee = mysqli_fetch_assoc($employee_result);
-    $source_table = 'employee'; // Singular table name
+    $source_table = 'employees';
+    error_log("✅ Employee found: " . ($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
 } else {
-    // Check employee table - using COLLATE to fix collation mismatch
-    error_log("Employee not found in employees table, checking employee table for ID: " . $employee_id);
-    $employee_query = "SELECT f.*, dh.id as department_head_id 
-                      FROM employees f 
-                      LEFT JOIN department_heads dh ON e.department COLLATE utf8mb4_general_ci = dh.department COLLATE utf8mb4_general_ci
-                      WHERE e.id = ? AND f.is_active = 1";
-    $employee_stmt = mysqli_prepare($conn, $employee_query);
-    if (!$employee_stmt) {
-        error_log("❌ FACULTY QUERY PREPARE ERROR: " . mysqli_error($conn));
-        throw new Exception("Failed to prepare employee query: " . mysqli_error($conn));
-    }
-    mysqli_stmt_bind_param($employee_stmt, 'i', $employee_id);
-    mysqli_stmt_execute($employee_stmt);
-    $employee_result = mysqli_stmt_get_result($employee_stmt);
-    
-    if (mysqli_num_rows($employee_result) > 0) {
-        $employee = mysqli_fetch_assoc($employee_result);
-        $source_table = 'employee'; // Correct table name
-        error_log("✅ Employee found: " . ($employee['first_name'] ?? '') . ' ' . ($employee['last_name'] ?? ''));
-    } else {
-        error_log("❌ Employee not found in employee table");
-    }
+    error_log("❌ Employee not found in employees table");
 }
 
 if (!$employee) {

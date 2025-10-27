@@ -3,14 +3,14 @@ session_start();
 require_once 'config/database.php';
 
 // Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized access']);
     exit();
 }
 
 // Get leave types
-$leave_types_query = "SELECT id, name, description, default_days_per_year 
+$leave_types_query = "SELECT id, name, description, max_days_per_year 
                       FROM leave_types 
                       WHERE is_active = 1 
                       ORDER BY name";

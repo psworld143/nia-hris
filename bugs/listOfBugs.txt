@@ -1,5 +1,5 @@
-1. Cant add employee, unauthorized access
-2. forgot password on login form
+1. Cant add employee, unauthorized access - For Testing
+2. forgot password on login form - System Administrator should be the one to Reset Password of User to NIA2025
 3. no user dashboard, gusto ko i try if may ara na para sa users
 4. cant add employee leave
 5. salary structure buttons (export,print) no function
@@ -10,3 +10,17 @@
 10. dtr card, upload dtr card cannot upload
 11. can add other data like performance review but redirects to dashboard after adding
 12. ga show sa user manager kaso di maka login dili pud ma edit ang passwords sa users
+
+Fixed
+1. Unable to add employee – system shows “unauthorized access” (for testing purposes).
+2. “Forgot Password” on the login form: only the System Administrator should be able to reset a user’s password to NIA2025.
+3. No user dashboard available – need to test if a dashboard for users already exists.
+4. Unable to add employee leave. - FIXED
+6. Salary structure buttons (Export, Print) are not functioning. - FIXED
+7. Error appears related to auto-increment structure when running the code. - FIXED
+8. Cannot add criteria for regularization – process keeps loading indefinitely. - FIXED
+9. When adding data (e.g., in payroll), the system refreshes and redirects back to the dashboard (index) without saving the data. - FIXED
+10. In Payroll Management → Payroll Periods, all buttons for each payroll behave the same – clicking any of them redirects to the dashboard. - FIXED
+11. DTR Card Upload – unable to upload DTR card. - FIXED
+12. Can add other data (e.g., Performance Review), but after adding, it redirects to the dashboard. - FIXED
+13. Users appear in User Manager, but cannot log in; also, their passwords cannot be edited. - FIXED

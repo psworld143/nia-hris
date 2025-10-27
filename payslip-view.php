@@ -4,7 +4,7 @@ require_once 'config/database.php';
 require_once 'includes/functions.php';
 
 // Check authentication
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'employee'])) {
     die('Unauthorized access');
 }
 
@@ -13,6 +13,28 @@ $employee_id = (int)($_GET['employee_id'] ?? 0);
 
 if ($period_id <= 0 || $employee_id <= 0) {
     die('Invalid parameters');
+}
+
+// For employee role, ensure they can only view their own payslip
+if ($_SESSION['role'] === 'employee') {
+    // Get employee ID for current user
+    $user_email_query = "SELECT email FROM users WHERE id = ?";
+    $user_email_stmt = mysqli_prepare($conn, $user_email_query);
+    mysqli_stmt_bind_param($user_email_stmt, "i", $_SESSION['user_id']);
+    mysqli_stmt_execute($user_email_stmt);
+    $user_email = mysqli_fetch_assoc(mysqli_stmt_get_result($user_email_stmt))['email'] ?? '';
+    
+    // Get employee ID for this user
+    $emp_query = "SELECT id FROM employees WHERE email = ? AND is_active = 1";
+    $emp_stmt = mysqli_prepare($conn, $emp_query);
+    mysqli_stmt_bind_param($emp_stmt, "s", $user_email);
+    mysqli_stmt_execute($emp_stmt);
+    $user_employee_id = mysqli_fetch_assoc(mysqli_stmt_get_result($emp_stmt))['id'] ?? 0;
+    
+    // Check if employee is trying to view their own payslip
+    if ($employee_id !== $user_employee_id) {
+        die('Unauthorized access - You can only view your own payslips');
+    }
 }
 
 // Get payroll data
