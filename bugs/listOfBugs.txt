@@ -1,1 +1,12 @@
-1. List bugs here
+1. Cant add employee, unauthorized access
+2. forgot password on login form
+3. no user dashboard, gusto ko i try if may ara na para sa users
+4. cant add employee leave
+5. salary structure buttons (export,print) no function
+6. showing error on auto increment structure when i run code
+7. cant add criteria for regularization, processing loading
+8. pag mag add ko halimbawa sa payroll naga refresh ang whole system then ga balik sa index which is dashboard then wala naga add
+9. on payroll management, inside payroll periods, ang mga buttons sa kada payroll naga same na pag i click balik dashboard lang
+10. dtr card, upload dtr card cannot upload
+11. can add other data like performance review but redirects to dashboard after adding
+12. ga show sa user manager kaso di maka login dili pud ma edit ang passwords sa users
