@@ -24,3 +24,19 @@ Fixed
 11. DTR Card Upload – unable to upload DTR card. - FIXED
 12. Can add other data (e.g., Performance Review), but after adding, it redirects to the dashboard. - FIXED
 13. Users appear in User Manager, but cannot log in; also, their passwords cannot be edited. - FIXED
+
+10-08-25
+
+cant test other role on rbac, try ko tani sir ang admin may access sa tanan or isa ka acc lang
+1. when editing user information, cant add salary grade, it resets all the other information needed to be filled when adding, you have to add another contact number,department,employment type (always resets)
+2. another bug on User Management - role code error php
+3. cant test salary auto increment cant add salary
+4. doesnt refresh page when adding and deleting a regularization criteria, you have to manually refresh 
+5. unauthorized access on adding leave
+6. everytime i click or double click text on system, writable inndication pops but cant write on it everypage
+7. cant access manage degrees, i want to try to deactivate one degrees, when adding degree, redirects on dashboard not adding data
+8. error saving payroll data on process payroll, view payslip no access but redirects to an empty page, on manage deduction doesnt edit deduction just redirect it to dashboard same when adding deduction
+9. cant upload DTR still not uploading when i click upload dtr button, nothing happens
+10. error on performance review
+Fatal error: Uncaught mysqli_sql_exception: Cannot add or update a child row: a foreign key constraint fails (`nia_hris`.`performance_reviews`, CONSTRAINT `fk_review_employee` FOREIGN KEY (`employee_id`) REFERENCES `faculty` (`id`) ON DELETE CASCADE) in C:\xampp\htdocs\nia-hris\performance-reviews.php:54 Stack trace: #0 C:\xampp\htdocs\nia-hris\performance-reviews.php(54): mysqli_stmt_execute(Object(mysqli_stmt)) #1 {main} thrown in C:\xampp\htdocs\nia-hris\performance-reviews.php on line 54
+11. training program suggestion button redirects to dashboard
