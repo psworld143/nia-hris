@@ -40,3 +40,4 @@ cant test other role on rbac, try ko tani sir ang admin may access sa tanan or i
 10. error on performance review
 Fatal error: Uncaught mysqli_sql_exception: Cannot add or update a child row: a foreign key constraint fails (`nia_hris`.`performance_reviews`, CONSTRAINT `fk_review_employee` FOREIGN KEY (`employee_id`) REFERENCES `faculty` (`id`) ON DELETE CASCADE) in C:\xampp\htdocs\nia-hris\performance-reviews.php:54 Stack trace: #0 C:\xampp\htdocs\nia-hris\performance-reviews.php(54): mysqli_stmt_execute(Object(mysqli_stmt)) #1 {main} thrown in C:\xampp\htdocs\nia-hris\performance-reviews.php on line 54
 11. training program suggestion button redirects to dashboard
+12. quick action on dashboard, add employee error
