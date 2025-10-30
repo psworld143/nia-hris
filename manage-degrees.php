@@ -500,7 +500,43 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[10000]">
+    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-6 border w-11/12 md:w-1/3 shadow-2xl rounded-2xl bg-white" id="confirmModalContent">
+        <div class="text-center">
+            <div id="confirmIcon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-4"></div>
+            <h3 id="confirmTitle" class="text-xl font-bold text-gray-900 mb-2"></h3>
+            <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+            <div class="flex justify-center gap-3">
+                <button id="confirmCancelBtn" onclick="closeConfirmModal()" 
+                        class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button id="confirmActionBtn" class="px-6 py-2 text-sm font-medium rounded-lg transition-colors"></button>
+            </div>
+        </div>
+    </div>
+    </div>
+
 <script>
+function showModal(id){document.getElementById(id).classList.remove('hidden');}
+function hideModal(id){document.getElementById(id).classList.add('hidden');}
+
+function showConfirmModal(config){
+    const { title, message, icon, iconColor, confirmText, confirmColor, onConfirm } = config;
+    const iconEl = document.getElementById('confirmIcon');
+    iconEl.innerHTML = `<i class="fas ${icon} text-4xl text-${iconColor}-500"></i>`;
+    iconEl.className = `mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-${iconColor}-100 mb-4`;
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    confirmBtn.innerHTML = `<i class="fas ${icon} mr-2"></i>${confirmText}`;
+    confirmBtn.className = `px-6 py-2 bg-gradient-to-r from-${confirmColor}-500 to-${confirmColor}-600 text-white rounded-lg hover:from-${confirmColor}-600 hover:to-${confirmColor}-700 transition-all duration-200 font-semibold flex items-center shadow-md hover:shadow-lg`;
+    confirmBtn.onclick = () => { closeConfirmModal(); onConfirm && onConfirm(); };
+    showModal('confirmModal');
+}
+
+function closeConfirmModal(){ hideModal('confirmModal'); }
 function openAddModal() {
     document.getElementById('modalTitle').textContent = 'Add New Degree';
     document.getElementById('formAction').value = 'add';
@@ -528,60 +564,62 @@ function closeModal() {
 }
 
 function toggleStatus(id, activate) {
-    const action = activate ? 'activate' : 'deactivate';
-    const actionText = activate ? 'Activating' : 'Deactivating';
-    
-    if (confirm(`Are you sure you want to ${action} this degree?`)) {
-        showToast(`${actionText} degree...`, 'info');
-        
-        fetch('toggle-degree-status.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `id=${id}&activate=${activate}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message, 'error');
-            }
-        })
-        .catch(error => {
-            showToast('An error occurred', 'error');
-            console.error('Error:', error);
-        });
-    }
+    const action = activate ? 'Activate' : 'Deactivate';
+    showConfirmModal({
+        title: `${action} Degree`,
+        message: `Are you sure you want to ${action.toLowerCase()} this degree?`,
+        icon: activate ? 'fa-play-circle' : 'fa-pause-circle',
+        iconColor: activate ? 'green' : 'yellow',
+        confirmText: action,
+        confirmColor: activate ? 'green' : 'yellow',
+        onConfirm: () => {
+            showToast(`${action} in progress...`, 'info');
+            fetch('toggle-degree-status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${id}&activate=${activate}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 600);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(() => showToast('An error occurred', 'error'));
+        }
+    });
 }
 
 function deleteDegree(id, name) {
-    if (confirm(`Are you sure you want to delete "${name}"?\n\nThis action cannot be undone!`)) {
-        showToast('Deleting degree...', 'info');
-        
-        fetch('delete-degree.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `id=${id}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                showToast(data.message, 'error');
-            }
-        })
-        .catch(error => {
-            showToast('An error occurred', 'error');
-            console.error('Error:', error);
-        });
-    }
+    showConfirmModal({
+        title: 'Delete Degree',
+        message: `Are you sure you want to delete "${name}"? This action cannot be undone.`,
+        icon: 'fa-trash-alt',
+        iconColor: 'red',
+        confirmText: 'Delete',
+        confirmColor: 'red',
+        onConfirm: () => {
+            showToast('Deleting degree...', 'info');
+            fetch('delete-degree.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${id}`
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 600);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(() => showToast('An error occurred', 'error'));
+        }
+    });
 }
 
 function showToast(message, type = 'info') {

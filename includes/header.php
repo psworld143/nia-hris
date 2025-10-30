@@ -60,6 +60,9 @@ if (isset($_SESSION['user_id'])) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jgrowl/1.4.8/jquery.jgrowl.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jgrowl/1.4.8/jquery.jgrowl.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .sidebar {
             transform: translateX(-100%);

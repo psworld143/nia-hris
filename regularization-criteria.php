@@ -130,6 +130,16 @@ if ((php_sapi_name() === 'cli' || ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST')
                 
                 echo json_encode(['success' => true, 'data' => $criteria]);
                 break;
+			
+            case 'list':
+                $result = mysqli_query($conn, "SELECT * FROM regularization_criteria ORDER BY criteria_name");
+                if (!$result) {
+                    echo json_encode(['success' => false, 'message' => 'Database query failed: ' . mysqli_error($conn)]);
+                    break;
+                }
+                $all = mysqli_fetch_all($result, MYSQLI_ASSOC);
+                echo json_encode(['success' => true, 'data' => $all]);
+                break;
         }
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
@@ -175,7 +185,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Total Criteria</p>
-                <p class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
+				<p id="totalCriteriaCount" class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
             </div>
         </div>
     </div>
@@ -187,7 +197,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Employee Criteria</p>
-                <p class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
+				<p class="text-2xl font-bold text-gray-900"><?php echo count($all_criteria); ?></p>
             </div>
         </div>
     </div>
@@ -199,7 +209,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Active Criteria</p>
-                <p class="text-2xl font-bold text-gray-900"><?php echo count(array_filter($all_criteria, function($c) { return $c['is_active'] == 1; })); ?></p>
+				<p id="activeCriteriaCount" class="text-2xl font-bold text-gray-900"><?php echo count(array_filter($all_criteria, function($c) { return $c['is_active'] == 1; })); ?></p>
             </div>
         </div>
     </div>
@@ -209,7 +219,7 @@ include 'includes/header.php';
 <div class="bg-white rounded-xl shadow-lg p-6">
     <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-semibold text-gray-900">Regularization Criteria List</h3>
-        <span class="text-sm text-gray-500"><?php echo count($all_criteria); ?> criteria</span>
+		<span id="listCountText" class="text-sm text-gray-500"><?php echo count($all_criteria); ?> criteria</span>
     </div>
     
     <div class="overflow-x-auto">
@@ -225,7 +235,7 @@ include 'includes/header.php';
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+			<tbody id="criteriaTbody" class="bg-white divide-y divide-gray-200">
                 <?php if (empty($all_criteria)): ?>
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center text-gray-500">
@@ -700,10 +710,15 @@ function toggleStatus(id, currentStatus) {
             .then(data => {
                 if (data.success) {
                     showNotification(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(() => {
+                        refreshCriteriaStatsAndTable();
+                    }, 300);
                 } else {
                     showNotification(data.message, 'error');
                 }
+            })
+            .catch(error => {
+                showNotification('An error occurred. Please try again.', 'error');
             });
         }
     });
@@ -729,10 +744,15 @@ function deleteCriteria(id) {
             .then(data => {
                 if (data.success) {
                     showNotification(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
+                    setTimeout(() => {
+                        refreshCriteriaStatsAndTable();
+                    }, 300);
                 } else {
                     showNotification(data.message, 'error');
                 }
+            })
+            .catch(error => {
+                showNotification('An error occurred. Please try again.', 'error');
             });
         }
     });
@@ -760,10 +780,10 @@ document.getElementById('criteriaForm').addEventListener('submit', function(e) {
         if (data.success) {
             submitText.innerHTML = '<i class="fas fa-check mr-2"></i>Success!';
             showNotification(data.message, 'success');
+            closeModal();
             setTimeout(() => {
-                closeModal();
-                location.reload();
-            }, 1000);
+                refreshCriteriaStatsAndTable();
+            }, 300);
         } else {
             showNotification(data.message, 'error');
             submitBtn.disabled = false;
@@ -777,14 +797,80 @@ document.getElementById('criteriaForm').addEventListener('submit', function(e) {
     });
 });
 
-// Notification function
-function showNotification(message, type) {
-    $.jGrowl(message, {
-        header: type === 'success' ? 'Success' : 'Error',
-        theme: type === 'success' ? 'jGrowl-success' : 'jGrowl-error',
-        life: 5000,
-        position: 'top-right'
-    });
+// Utility function for escaping HTML
+function escapeHtml(text) {
+    if (text == null) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Notification function - standalone implementation
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.custom-notification');
+    existing.forEach(n => n.remove());
+    
+    // Create notification container if it doesn't exist
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px;';
+        document.body.appendChild(container);
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'custom-notification';
+    
+    const colors = {
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500',
+        info: 'bg-blue-500'
+    };
+    
+    const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+    
+    const bgColor = colors[type] || colors.info;
+    const icon = icons[type] || icons.info;
+    const header = type === 'success' ? 'Success' : type === 'error' ? 'Error' : type === 'warning' ? 'Warning' : 'Info';
+    
+    notification.className = `custom-notification ${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-3 transform translate-x-full transition-transform duration-300 flex items-center justify-between gap-3`;
+    notification.innerHTML = `
+        <div class="flex items-center gap-3">
+            <i class="fas ${icon} text-xl"></i>
+            <div>
+                <div class="font-semibold text-sm">${escapeHtml(header)}</div>
+                <div class="text-sm">${escapeHtml(message)}</div>
+            </div>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200 ml-2">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 300);
+    }, 5000);
 }
 
 // Close modals when clicking outside
@@ -820,4 +906,127 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+</script>
+<script>
+	function renderCriteriaRow(criteria) {
+		return `
+		<tr class="hover:bg-green-50 transition-colors" data-criteria-row="${criteria.id}">
+			<td class="px-6 py-4">
+				<div class="text-sm font-medium text-gray-900">${escapeHtml(criteria.criteria_name)}</div>
+				<div class="text-sm text-gray-500">${escapeHtml((criteria.criteria_description || '').slice(0, 50))}${(criteria.criteria_description || '').length > 50 ? '...' : ''}</div>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap">
+				<span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+					<i class="fas fa-user-tie mr-1"></i>Employee
+				</span>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap">
+				<span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+					${criteria.minimum_months} months
+				</span>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap">
+				<span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+					<i class="fas fa-star mr-1"></i>${criteria.performance_rating_min}/5.0
+				</span>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap">
+				<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+					${criteria.attendance_percentage_min}%
+				</span>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap">
+				<span class="px-2 py-1 text-xs font-semibold rounded-full ${criteria.is_active == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+					<i class="fas ${criteria.is_active == 1 ? 'fa-check-circle' : 'fa-times-circle'} mr-1"></i>
+					${criteria.is_active == 1 ? 'Active' : 'Inactive'}
+				</span>
+			</td>
+			<td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+				<div class="flex items-center gap-3">
+					<button onclick="viewCriteria(${criteria.id})" class="text-green-600 hover:text-green-900" title="View">
+						<i class="fas fa-eye"></i>
+					</button>
+					<button onclick="editCriteria(${criteria.id})" class="text-blue-600 hover:text-blue-900" title="Edit">
+						<i class="fas fa-edit"></i>
+					</button>
+					<button onclick="toggleStatus(${criteria.id}, ${criteria.is_active == 1 || criteria.is_active === '1' ? 'true' : 'false'})" class="${criteria.is_active == 1 || criteria.is_active === '1' ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'}" title="${criteria.is_active == 1 || criteria.is_active === '1' ? 'Deactivate' : 'Activate'}">
+						<i class="fas ${criteria.is_active == 1 || criteria.is_active === '1' ? 'fa-pause-circle' : 'fa-play-circle'}"></i>
+					</button>
+					<button onclick="deleteCriteria(${criteria.id})" class="text-red-600 hover:text-red-900" title="Delete">
+						<i class="fas fa-trash-alt"></i>
+					</button>
+				</div>
+			</td>
+		</tr>`;
+	}
+
+
+	function refreshCriteriaStatsAndTable() {
+		const formData = new URLSearchParams();
+		formData.append('ajax', '1');
+		formData.append('action', 'list');
+		
+		fetch('', {
+			method: 'POST',
+			headers: { 
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: formData.toString()
+		})
+		.then(response => {
+			if (!response.ok) {
+				throw new Error('Network response was not ok: ' + response.status);
+			}
+			return response.json();
+		})
+		.then(resp => {
+			if (!resp.success) {
+				showNotification('Failed to refresh: ' + (resp.message || 'Unknown error'), 'error');
+				return;
+			}
+			const data = resp.data || [];
+			const tbody = document.getElementById('criteriaTbody');
+			
+			if (!tbody) {
+				showNotification('Error: Page structure changed. Please reload manually.', 'error');
+				return;
+			}
+			
+			if (data.length === 0) {
+				tbody.innerHTML = `
+					<tr>
+						<td colspan="7" class="px-6 py-12 text-center text-gray-500">
+							<div class="flex flex-col items-center">
+								<div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+									<i class="fas fa-clipboard-list text-gray-400 text-3xl"></i>
+								</div>
+								<p class="text-lg font-medium text-gray-700">No regularization criteria found</p>
+								<p class="text-sm text-gray-500 mt-1">Create your first criteria to get started.</p>
+								<button onclick="openAddModal()" class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+									<i class="fas fa-plus mr-2"></i>Add Criteria
+								</button>
+							</div>
+						</td>
+					</tr>`;
+			} else {
+				tbody.innerHTML = data.map(renderCriteriaRow).join('');
+			}
+			
+			const total = data.length;
+			const active = data.filter(c => c.is_active == 1 || c.is_active === '1').length;
+			
+			const totalEl = document.getElementById('totalCriteriaCount');
+			if (totalEl) totalEl.textContent = total;
+			
+			const activeEl = document.getElementById('activeCriteriaCount');
+			if (activeEl) activeEl.textContent = active;
+			
+			const listText = document.getElementById('listCountText');
+			if (listText) listText.textContent = `${total} criteria`;
+		})
+		.catch(error => {
+			showNotification('Error refreshing page. Please reload manually.', 'error');
+		});
+	}
+
 </script>

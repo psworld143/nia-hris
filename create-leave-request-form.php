@@ -6,9 +6,15 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'config/database.php';
 require_once 'includes/roles.php';
 
-// Check if user is logged in and has employee role
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'employee') {
+// Check if user is logged in
+if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
+    exit();
+}
+
+// Redirect HR users to leave-management page (they should use that to add leave for employees)
+if (!isEmployee()) {
+    header('Location: leave-management.php');
     exit();
 }
 

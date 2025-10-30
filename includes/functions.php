@@ -215,5 +215,40 @@ function get_organization_setting($conn, $key, $default = '') {
     }
     return $default;
 }
+
+/**
+ * Set standard JSON response headers for AJAX endpoints
+ * @param int $status HTTP status code
+ */
+function set_json_response_headers($status = 200) {
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: application/json');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+    }
+}
+
+/**
+ * Send a JSON response and terminate
+ * @param array $data
+ * @param int $status
+ */
+function send_json(array $data, $status = 200) {
+    set_json_response_headers($status);
+    echo json_encode($data);
+    exit();
+}
+
+/**
+ * Send a standardized JSON error response and terminate
+ * @param string $message
+ * @param int $status
+ * @param array $extra
+ */
+function send_json_error($message, $status = 400, array $extra = []) {
+    $payload = array_merge(['success' => false, 'message' => $message], $extra);
+    send_json($payload, $status);
+}
 ?>
 

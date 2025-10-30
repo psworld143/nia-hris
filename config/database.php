@@ -7,8 +7,9 @@ $dbname = 'nia_hris';
 $username = 'root';
 $password = '';
 
-// Create connection without specifying database first
-$conn = mysqli_connect($host, $username, $password, null, 3306, '/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock');
+// Create connection using XAMPP socket (for macOS)
+$socket = '/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock';
+$conn = @mysqli_connect($host, $username, $password, null, 3306, $socket);
 
 // Check connection
 if (!$conn) {

@@ -20,8 +20,8 @@ if (!isset($conn) || !$conn) {
 
 mysqli_set_charset($conn, 'utf8mb4');
 
-// Check if user is logged in and is HR
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+// Check if user is logged in and is HR (including super_admin)
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     ob_clean();
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);

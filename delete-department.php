@@ -3,10 +3,17 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
+// Start output buffering to catch any stray output
+ob_start();
+
 session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 require_once 'includes/id_encryption.php';
+require_once 'includes/roles.php';
+
+// Clear any output and set JSON header
+ob_clean();
 header('Content-Type: application/json');
 
 // Log the request for debugging
@@ -14,7 +21,7 @@ error_log("Delete department request received. Session role: " . (isset($_SESSIO
 error_log("Session user_id: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'not set'));
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !canManageDepartments()) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
@@ -26,7 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+$json_input = file_get_contents('php://input');
+$input = json_decode($json_input, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    error_log("JSON decode error: " . json_last_error_msg());
+    echo json_encode(['success' => false, 'message' => 'Invalid JSON input']);
+    exit();
+}
+
 error_log("Input data: " . print_r($input, true));
 
 if (!isset($input['department_id']) || empty($input['department_id'])) {
@@ -39,7 +54,15 @@ if (!isset($input['hr_password']) || empty($input['hr_password'])) {
     exit();
 }
 
-$department_id = decrypt_id($input['department_id']);
+// Decrypt department ID with error handling
+try {
+    $department_id = decrypt_id($input['department_id']);
+} catch (Exception $e) {
+    error_log("Department ID decryption failed: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Invalid department ID format']);
+    exit();
+}
+
 $hr_password = $input['hr_password'];
 
 // Validate department ID
@@ -51,7 +74,8 @@ if ($department_id <= 0) {
 // Verify HR officer password
 $user_id = $_SESSION['user_id'];
 
-$password_query = "SELECT password FROM users WHERE id = ? AND (role = 'human_resource' OR role = 'hr_manager')";
+// Check for all roles that can manage departments: super_admin, admin, hr_manager
+$password_query = "SELECT password FROM users WHERE id = ? AND role IN ('super_admin', 'admin', 'hr_manager')";
 $password_stmt = mysqli_prepare($conn, $password_query);
 mysqli_stmt_bind_param($password_stmt, "i", $user_id);
 mysqli_stmt_execute($password_stmt);
@@ -88,50 +112,46 @@ $department_name = $department['name'];
 // Check for existing related data that would prevent deletion
 $related_data = [];
 
-// Check for faculty members in this department
-$faculty_check = "SELECT COUNT(*) as count FROM employees WHERE department = ? AND is_active = 1";
-$faculty_stmt = mysqli_prepare($conn, $faculty_check);
-mysqli_stmt_bind_param($faculty_stmt, "s", $department_name);
-mysqli_stmt_execute($faculty_stmt);
-$faculty_result = mysqli_stmt_get_result($faculty_stmt);
-$faculty_count = mysqli_fetch_assoc($faculty_result)['count'];
-if ($faculty_count > 0) {
-    $related_data[] = "$faculty_count active faculty member(s)";
+try {
+    // Check for employees in this department (using department_id foreign key)
+    $employee_check = "SELECT COUNT(*) as count FROM employees WHERE department_id = ? AND is_active = 1";
+    $employee_stmt = mysqli_prepare($conn, $employee_check);
+    if ($employee_stmt) {
+        mysqli_stmt_bind_param($employee_stmt, "i", $department_id);
+        mysqli_stmt_execute($employee_stmt);
+        $employee_result = mysqli_stmt_get_result($employee_stmt);
+        if ($employee_result) {
+            $employee_count = mysqli_fetch_assoc($employee_result)['count'];
+            if ($employee_count > 0) {
+                $related_data[] = "$employee_count active employee(s)";
+            }
+        }
+        mysqli_stmt_close($employee_stmt);
+    }
+} catch (Exception $e) {
+    error_log("Error checking employees: " . $e->getMessage());
 }
 
-// Check for employees in this department
-$employee_check = "SELECT COUNT(*) as count FROM employees WHERE department = ? AND is_active = 1";
-$employee_stmt = mysqli_prepare($conn, $employee_check);
-mysqli_stmt_bind_param($employee_stmt, "s", $department_name);
-mysqli_stmt_execute($employee_stmt);
-$employee_result = mysqli_stmt_get_result($employee_stmt);
-$employee_count = mysqli_fetch_assoc($employee_result)['count'];
-if ($employee_count > 0) {
-    $related_data[] = "$employee_count active employee(s)";
-}
-
-// Check for courses in this department
-$course_check = "SELECT COUNT(*) as count FROM courses WHERE department = ?";
-$course_stmt = mysqli_prepare($conn, $course_check);
-mysqli_stmt_bind_param($course_stmt, "s", $department_name);
-mysqli_stmt_execute($course_stmt);
-$course_result = mysqli_stmt_get_result($course_stmt);
-$course_count = mysqli_fetch_assoc($course_result)['count'];
-if ($course_count > 0) {
-    $related_data[] = "$course_count course(s)";
-}
-
-// Check for leave requests from this department
-$leave_check = "SELECT COUNT(*) as count FROM employee_leave_requests flr 
-                JOIN employees f ON flr.employee_id = f.id 
-                WHERE e.department = ?";
-$leave_stmt = mysqli_prepare($conn, $leave_check);
-mysqli_stmt_bind_param($leave_stmt, "s", $department_name);
-mysqli_stmt_execute($leave_stmt);
-$leave_result = mysqli_stmt_get_result($leave_stmt);
-$leave_count = mysqli_fetch_assoc($leave_result)['count'];
-if ($leave_count > 0) {
-    $related_data[] = "$leave_count leave request(s)";
+try {
+    // Check for leave requests from employees in this department
+    $leave_check = "SELECT COUNT(*) as count FROM employee_leave_requests elr 
+                    INNER JOIN employees e ON elr.employee_id = e.id 
+                    WHERE e.department_id = ?";
+    $leave_stmt = mysqli_prepare($conn, $leave_check);
+    if ($leave_stmt) {
+        mysqli_stmt_bind_param($leave_stmt, "i", $department_id);
+        mysqli_stmt_execute($leave_stmt);
+        $leave_result = mysqli_stmt_get_result($leave_stmt);
+        if ($leave_result) {
+            $leave_count = mysqli_fetch_assoc($leave_result)['count'];
+            if ($leave_count > 0) {
+                $related_data[] = "$leave_count leave request(s)";
+            }
+        }
+        mysqli_stmt_close($leave_stmt);
+    }
+} catch (Exception $e) {
+    error_log("Error checking leave requests: " . $e->getMessage());
 }
 
 // If there are related records, prevent deletion

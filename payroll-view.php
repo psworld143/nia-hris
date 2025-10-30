@@ -102,7 +102,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Gross Pay</p>
-                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format($period['total_gross'], 2); ?></p>
+                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format((float)($period['total_gross'] ?? 0), 2); ?></p>
             </div>
         </div>
     </div>
@@ -114,7 +114,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Deductions</p>
-                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format($period['total_deductions'], 2); ?></p>
+                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format((float)($period['total_deductions'] ?? 0), 2); ?></p>
             </div>
         </div>
     </div>
@@ -126,7 +126,7 @@ include 'includes/header.php';
             </div>
             <div>
                 <p class="text-sm text-gray-600">Net Pay</p>
-                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format($period['total_net'], 2); ?></p>
+                <p class="text-xl font-bold text-gray-900">₱<?php echo number_format((float)($period['total_net'] ?? 0), 2); ?></p>
             </div>
         </div>
     </div>
@@ -163,20 +163,20 @@ include 'includes/header.php';
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-xs">
-                                <div>Reg: <?php echo number_format($record['regular_hours'], 1); ?> hrs</div>
+                                <div>Reg: <?php echo number_format((float)($record['regular_hours'] ?? 0), 1); ?> hrs</div>
                                 <?php if ($record['overtime_hours'] > 0): ?>
-                                    <div>OT: <?php echo number_format($record['overtime_hours'], 1); ?> hrs</div>
+                                    <div>OT: <?php echo number_format((float)($record['overtime_hours'] ?? 0), 1); ?> hrs</div>
                                 <?php endif; ?>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-semibold text-green-600">₱<?php echo number_format($record['gross_pay'], 2); ?></span>
+                            <span class="text-sm font-semibold text-green-600">₱<?php echo number_format((float)($record['gross_pay'] ?? 0), 2); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-semibold text-red-600">₱<?php echo number_format($record['total_deductions'], 2); ?></span>
+                            <span class="text-sm font-semibold text-red-600">₱<?php echo number_format((float)($record['total_deductions'] ?? 0), 2); ?></span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-bold text-purple-600">₱<?php echo number_format($record['net_pay'], 2); ?></span>
+                            <span class="text-sm font-bold text-purple-600">₱<?php echo number_format((float)($record['net_pay'] ?? 0), 2); ?></span>
                         </td>
                         <td class="px-6 py-4 text-center">
                             <a href="payslip-view.php?period_id=<?php echo $period_id; ?>&employee_id=<?php echo $record['employee_id']; ?>" 

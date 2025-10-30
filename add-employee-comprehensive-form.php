@@ -2,9 +2,10 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
+require_once 'includes/roles.php';
 
-// Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'super_admin'])) {
+// Check if user is logged in and can add employees
+if (!isset($_SESSION['user_id']) || !canAddEmployees()) {
     // Debug information
     $debug_info = "Session Debug:\n";
     $debug_info .= "User ID: " . (isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 'NOT SET') . "\n";
@@ -282,8 +283,7 @@ include 'includes/header.php';
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Active Status</label>
                 <select name="is_active" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
-                    <option value="">Select Status</option>
-                    <option value="1">Active</option>
+                    <option value="1" selected>Active</option>
                     <option value="0">Inactive</option>
                 </select>
             </div>
@@ -788,7 +788,16 @@ function populateSalaryDetails() {
         updateFormProgress();
         
         // Show success message
-        showMessage('Salary details populated from selected structure!', 'success');
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: 'Salary details populated from selected structure!',
+            confirmButtonColor: '#16a34a',
+            timer: 2000,
+            timerProgressBar: true,
+            toast: true,
+            position: 'top-end'
+        });
     } else {
         clearSalaryDetails();
     }
@@ -914,7 +923,12 @@ document.getElementById('comprehensiveEmployeeForm').addEventListener('submit', 
     const confirmPassword = this.querySelector('input[name="confirm_password"]').value;
     
     if (password !== confirmPassword) {
-        alert('Passwords do not match');
+        Swal.fire({
+            icon: 'error',
+            title: 'Password Mismatch',
+            text: 'Passwords do not match. Please try again.',
+            confirmButtonColor: '#dc2626'
+        });
         return false;
     }
     
@@ -923,6 +937,17 @@ document.getElementById('comprehensiveEmployeeForm').addEventListener('submit', 
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Adding Employee...';
+    
+    // Show loading alert
+    Swal.fire({
+        title: 'Processing...',
+        text: 'Please wait while we add the employee',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
     
     // Submit form via AJAX
     const formData = new FormData(this);
@@ -938,24 +963,72 @@ document.getElementById('comprehensiveEmployeeForm').addEventListener('submit', 
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+            });
+        }
+        
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
+        
         if (data.success) {
-            showMessage(data.message, 'success');
-            // Reset form
-            this.reset();
-            updateFormProgress();
-            // Redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = 'admin-employee.php';
-            }, 2000);
+            // Close loading alert first
+            Swal.close();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: data.message || 'Employee added successfully with comprehensive HR details!',
+                confirmButtonColor: '#16a34a',
+                showConfirmButton: true,
+                timer: 2500,
+                timerProgressBar: true,
+                willClose: () => {
+                    // Reset form
+                    this.reset();
+                    updateFormProgress();
+                    // Redirect to employee list
+                    window.location.href = 'admin-employee.php';
+                }
+            });
         } else {
-            showMessage(data.message, 'error');
+            // Close loading alert first
+            Swal.close();
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'An error occurred while adding the employee.',
+                confirmButtonColor: '#dc2626'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showMessage('Network error. Please try again.', 'error');
+        
+        // Close loading alert first
+        Swal.close();
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An unexpected error occurred: ' + error.message,
+            confirmButtonColor: '#dc2626'
+        });
     })
     .finally(() => {
         submitBtn.disabled = false;
@@ -963,24 +1036,25 @@ document.getElementById('comprehensiveEmployeeForm').addEventListener('submit', 
     });
 });
 
-// Show message function
+// Show message function (kept for backward compatibility, but using SweetAlert now)
 function showMessage(message, type) {
-    const container = document.getElementById('messageContainer');
-    const alertClass = type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800';
-    const iconClass = type === 'success' ? 'fas fa-check-circle text-green-400' : 'fas fa-exclamation-circle text-red-400';
-    
-    container.innerHTML = `
-        <div class="mb-6 ${alertClass} border rounded-lg p-4">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="${iconClass}"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm font-medium">${message}</p>
-                </div>
-            </div>
-        </div>
-    `;
+    if (type === 'success') {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: message,
+            confirmButtonColor: '#16a34a',
+            timer: 3000,
+            timerProgressBar: true
+        });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: message,
+            confirmButtonColor: '#dc2626'
+        });
+    }
 }
 
 // Initialize form tracking

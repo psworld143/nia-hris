@@ -3,8 +3,8 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 
-// Check authentication
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'employee'])) {
+// Check authentication (include super_admin)
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager', 'employee'])) {
     die('Unauthorized access');
 }
 

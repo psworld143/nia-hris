@@ -2,32 +2,22 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
-
-// Ensure no output before JSON
-ob_start();
+require_once 'includes/roles.php';
 
 // Disable error output to prevent JSON corruption
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
-// Set content type to JSON
-header('Content-Type: application/json');
-
-// Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    ob_clean();
-    http_response_code(403);
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Check if user is logged in and can delete employees
+if (!isset($_SESSION['user_id']) || !canDeleteEmployees()) {
+    send_json_error('Unauthorized access', 403);
 }
 
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input) {
-    ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Invalid input data']);
-    exit();
+    send_json_error('Invalid input data', 400);
 }
 
 $employee_id = $input['employee_id'] ?? 0;
@@ -35,22 +25,20 @@ $hr_password = $input['hr_password'] ?? '';
 $force_delete = $input['force_delete'] ?? false;
 
 if (!$employee_id || !$hr_password || !$force_delete) {
-    ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
-    exit();
+    send_json_error('Missing required parameters', 400);
 }
 
 try {
-    // Verify HR officer password
+    // Verify user password (for roles that can delete employees)
     $user_id = $_SESSION['user_id'];
-    $password_query = "SELECT password FROM users WHERE id = ? AND role = 'human_resource'";
+    $password_query = "SELECT password FROM users WHERE id = ? AND role IN ('super_admin', 'admin', 'hr_manager')";
     $password_stmt = mysqli_prepare($conn, $password_query);
     mysqli_stmt_bind_param($password_stmt, "i", $user_id);
     mysqli_stmt_execute($password_stmt);
     $password_result = mysqli_stmt_get_result($password_stmt);
     
     if (!$password_result || mysqli_num_rows($password_result) === 0) {
-        throw new Exception('HR officer not found');
+        throw new Exception('User not authorized to force delete employees');
     }
     
     $user_data = mysqli_fetch_assoc($password_result);
@@ -232,22 +220,17 @@ try {
     // Commit transaction
     mysqli_commit($conn);
     
-    // Clean output buffer and send JSON response
-    ob_clean();
-    echo json_encode([
+    // Send JSON response
+    send_json([
         'success' => true, 
         'message' => "Employee {$employee_name} and all related data have been permanently deleted"
-    ]);
+    ], 200);
     
 } catch (Exception $e) {
     // Rollback transaction on error
     mysqli_rollback($conn);
     
-    // Clean output buffer and send JSON error response
-    ob_clean();
-    echo json_encode([
-        'success' => false, 
-        'message' => $e->getMessage()
-    ]);
+    // Send JSON error response
+    send_json_error($e->getMessage(), 500);
 }
 ?>

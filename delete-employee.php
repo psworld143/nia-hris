@@ -1,52 +1,78 @@
 <?php
-// Error reporting (log only)
+// Start output buffering to catch any accidental output
+ob_start();
+
+// Error reporting - log errors but don't display them (would corrupt JSON)
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 0);  // Don't display errors - they corrupt JSON responses
+ini_set('log_errors', 1);
 
-session_start();
-require_once 'config/database.php';
-require_once 'includes/functions.php';
-require_once 'includes/id_encryption.php';
-header('Content-Type: application/json');
+try {
+    // Check if session is already started to avoid warnings
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    require_once 'config/database.php';
+    require_once 'includes/functions.php';
+    require_once 'includes/roles.php';
+    require_once 'includes/id_encryption.php';
+    
+    // Check database connection
+    if (!isset($conn) || !$conn) {
+        send_json_error('Database connection failed. Please try again later.', 500);
+    }
 
-// Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+// Check if user is logged in and can delete employees
+if (!isset($_SESSION['user_id']) || !canDeleteEmployees()) {
+    send_json_error('Unauthorized access', 403);
 }
 
 // Check if it's a POST request
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
-    exit();
+    send_json_error('Invalid request method', 405);
 }
 
 // Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+$raw_input = file_get_contents('php://input');
+if ($raw_input === false) {
+    send_json_error('Failed to read request data', 400);
+}
+
+$input = json_decode($raw_input, true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    send_json_error('Invalid JSON format in request: ' . json_last_error_msg(), 400);
+}
 
 if (!isset($input['employee_id']) || empty($input['employee_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Employee ID is required']);
-    exit();
+    send_json_error('Employee ID is required', 400);
 }
 
 $employee_id = (int)$input['employee_id'];
 
 // Validate employee ID
 if ($employee_id <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid employee ID']);
-    exit();
+    send_json_error('Invalid employee ID', 400);
 }
 
 // Check if employee exists
 $check_query = "SELECT id, first_name, last_name, email FROM employees WHERE id = ?";
 $check_stmt = mysqli_prepare($conn, $check_query);
+if (!$check_stmt) {
+    send_json_error('Database error: ' . mysqli_error($conn), 500);
+}
+
 mysqli_stmt_bind_param($check_stmt, "i", $employee_id);
 mysqli_stmt_execute($check_stmt);
 $check_result = mysqli_stmt_get_result($check_stmt);
 
+if (!$check_result) {
+    mysqli_stmt_close($check_stmt);
+    send_json_error('Database error: ' . mysqli_error($conn), 500);
+}
+
 if (mysqli_num_rows($check_result) === 0) {
-    echo json_encode(['success' => false, 'message' => 'Employee not found']);
-    exit();
+    mysqli_stmt_close($check_stmt);
+    send_json_error('Employee not found', 404);
 }
 
 $employee = mysqli_fetch_assoc($check_result);
@@ -55,54 +81,98 @@ $employee_name = $employee['first_name'] . ' ' . $employee['last_name'];
 // Check for existing related data that would prevent deletion
 $related_data = [];
 
-// Check for leave requests
-$leave_check = "SELECT COUNT(*) as count FROM employee_leave_requests WHERE employee_id = ?";
-$leave_stmt = mysqli_prepare($conn, $leave_check);
-mysqli_stmt_bind_param($leave_stmt, "i", $employee_id);
-mysqli_stmt_execute($leave_stmt);
-$leave_result = mysqli_stmt_get_result($leave_stmt);
-$leave_count = mysqli_fetch_assoc($leave_result)['count'];
-if ($leave_count > 0) {
-    $related_data[] = "$leave_count leave request(s)";
+// Check for leave requests (only if table exists)
+$table_check_requests = mysqli_query($conn, "SHOW TABLES LIKE 'employee_leave_requests'");
+if ($table_check_requests && mysqli_num_rows($table_check_requests) > 0) {
+    mysqli_free_result($table_check_requests);
+    $leave_check = "SELECT COUNT(*) as count FROM employee_leave_requests WHERE employee_id = ?";
+    $leave_stmt = mysqli_prepare($conn, $leave_check);
+    if ($leave_stmt) {
+        mysqli_stmt_bind_param($leave_stmt, "i", $employee_id);
+        mysqli_stmt_execute($leave_stmt);
+        $leave_result = mysqli_stmt_get_result($leave_stmt);
+        $leave_count = mysqli_fetch_assoc($leave_result)['count'];
+        if ($leave_count > 0) {
+            $related_data[] = "$leave_count leave request(s)";
+        }
+        mysqli_stmt_close($leave_stmt);
+    }
+} else {
+    if ($table_check_requests) {
+        mysqli_free_result($table_check_requests);
+    }
 }
 
-// Check for leave balances
-$balance_check = "SELECT COUNT(*) as count FROM employee_leave_balances WHERE employee_id = ?";
-$balance_stmt = mysqli_prepare($conn, $balance_check);
-mysqli_stmt_bind_param($balance_stmt, "i", $employee_id);
-mysqli_stmt_execute($balance_stmt);
-$balance_result = mysqli_stmt_get_result($balance_stmt);
-$balance_count = mysqli_fetch_assoc($balance_result)['count'];
-if ($balance_count > 0) {
-    $related_data[] = "$balance_count leave balance record(s)";
+// Check for leave balances (only if table exists)
+$table_check_balances = mysqli_query($conn, "SHOW TABLES LIKE 'employee_leave_balances'");
+if ($table_check_balances && mysqli_num_rows($table_check_balances) > 0) {
+    mysqli_free_result($table_check_balances);
+    $balance_check = "SELECT COUNT(*) as count FROM employee_leave_balances WHERE employee_id = ?";
+    $balance_stmt = mysqli_prepare($conn, $balance_check);
+    if ($balance_stmt) {
+        mysqli_stmt_bind_param($balance_stmt, "i", $employee_id);
+        mysqli_stmt_execute($balance_stmt);
+        $balance_result = mysqli_stmt_get_result($balance_stmt);
+        $balance_count = mysqli_fetch_assoc($balance_result)['count'];
+        if ($balance_count > 0) {
+            $related_data[] = "$balance_count leave balance record(s)";
+        }
+        mysqli_stmt_close($balance_stmt);
+    }
+} else {
+    if ($table_check_balances) {
+        mysqli_free_result($table_check_balances);
+    }
 }
 
-// Check for enhanced leave balances
-$enhanced_balance_check = "SELECT COUNT(*) as count FROM enhanced_leave_balances WHERE employee_id = ? AND employee_type = 'employee'";
-$enhanced_balance_stmt = mysqli_prepare($conn, $enhanced_balance_check);
-mysqli_stmt_bind_param($enhanced_balance_stmt, "i", $employee_id);
-mysqli_stmt_execute($enhanced_balance_stmt);
-$enhanced_balance_result = mysqli_stmt_get_result($enhanced_balance_stmt);
-$enhanced_balance_count = mysqli_fetch_assoc($enhanced_balance_result)['count'];
-if ($enhanced_balance_count > 0) {
-    $related_data[] = "$enhanced_balance_count enhanced leave balance record(s)";
+// Check for enhanced leave balances (only if table exists)
+$table_check_enhanced = mysqli_query($conn, "SHOW TABLES LIKE 'enhanced_leave_balances'");
+if ($table_check_enhanced && mysqli_num_rows($table_check_enhanced) > 0) {
+    mysqli_free_result($table_check_enhanced);
+    $enhanced_balance_check = "SELECT COUNT(*) as count FROM enhanced_leave_balances WHERE employee_id = ? AND employee_type = 'employee'";
+    $enhanced_balance_stmt = mysqli_prepare($conn, $enhanced_balance_check);
+    if ($enhanced_balance_stmt) {
+        mysqli_stmt_bind_param($enhanced_balance_stmt, "i", $employee_id);
+        mysqli_stmt_execute($enhanced_balance_stmt);
+        $enhanced_balance_result = mysqli_stmt_get_result($enhanced_balance_stmt);
+        $enhanced_balance_count = mysqli_fetch_assoc($enhanced_balance_result)['count'];
+        if ($enhanced_balance_count > 0) {
+            $related_data[] = "$enhanced_balance_count enhanced leave balance record(s)";
+        }
+        mysqli_stmt_close($enhanced_balance_stmt);
+    }
+} else {
+    if ($table_check_enhanced) {
+        mysqli_free_result($table_check_enhanced);
+    }
 }
 
-// Check for employee regularization records
-$emp_regularization_check = "SELECT COUNT(*) as count FROM employee_regularization WHERE employee_id = ?";
-$emp_regularization_stmt = mysqli_prepare($conn, $emp_regularization_check);
-if ($emp_regularization_stmt) {
-    mysqli_stmt_bind_param($emp_regularization_stmt, "i", $employee_id);
-    mysqli_stmt_execute($emp_regularization_stmt);
-    $emp_regularization_result = mysqli_stmt_get_result($emp_regularization_stmt);
-    $emp_regularization_count = mysqli_fetch_assoc($emp_regularization_result)['count'];
-    if ($emp_regularization_count > 0) {
-        $related_data[] = "$emp_regularization_count regularization record(s)";
+// Check for employee regularization records (only if table exists)
+$table_check_regularization = mysqli_query($conn, "SHOW TABLES LIKE 'employee_regularization'");
+if ($table_check_regularization && mysqli_num_rows($table_check_regularization) > 0) {
+    mysqli_free_result($table_check_regularization);
+    $emp_regularization_check = "SELECT COUNT(*) as count FROM employee_regularization WHERE employee_id = ?";
+    $emp_regularization_stmt = mysqli_prepare($conn, $emp_regularization_check);
+    if ($emp_regularization_stmt) {
+        mysqli_stmt_bind_param($emp_regularization_stmt, "i", $employee_id);
+        mysqli_stmt_execute($emp_regularization_stmt);
+        $emp_regularization_result = mysqli_stmt_get_result($emp_regularization_stmt);
+        $emp_regularization_count = mysqli_fetch_assoc($emp_regularization_result)['count'];
+        if ($emp_regularization_count > 0) {
+            $related_data[] = "$emp_regularization_count regularization record(s)";
+        }
+        mysqli_stmt_close($emp_regularization_stmt);
+    }
+} else {
+    if ($table_check_regularization) {
+        mysqli_free_result($table_check_regularization);
     }
 }
 
 // Check for activity logs (if employee is referenced in admin activity logs)
-if (mysqli_query($conn, "SHOW TABLES LIKE 'admin_activity_logs'")->num_rows > 0) {
+$table_check = mysqli_query($conn, "SHOW TABLES LIKE 'admin_activity_logs'");
+if ($table_check && mysqli_num_rows($table_check) > 0) {
+    mysqli_free_result($table_check);
     $activity_check = "SELECT COUNT(*) as count FROM admin_activity_logs WHERE admin_id = ?";
     $activity_stmt = mysqli_prepare($conn, $activity_check);
     if ($activity_stmt) {
@@ -113,28 +183,43 @@ if (mysqli_query($conn, "SHOW TABLES LIKE 'admin_activity_logs'")->num_rows > 0)
         if ($activity_count > 0) {
             $related_data[] = "$activity_count activity log(s)";
         }
+        mysqli_stmt_close($activity_stmt);
+    }
+} else {
+    if ($table_check) {
+        mysqli_free_result($table_check);
     }
 }
 
-// Check for user account records (if employee has login credentials)
-$user_check = "SELECT COUNT(*) as count FROM users WHERE email = ?";
-$user_stmt = mysqli_prepare($conn, $user_check);
-mysqli_stmt_bind_param($user_stmt, "s", $employee['email']);
-mysqli_stmt_execute($user_stmt);
-$user_result = mysqli_stmt_get_result($user_stmt);
-$user_count = mysqli_fetch_assoc($user_result)['count'];
-if ($user_count > 0) {
-    $related_data[] = "$user_count user account(s)";
+// Check for user account records (if employee has login credentials - only if table exists)
+$table_check_users = mysqli_query($conn, "SHOW TABLES LIKE 'users'");
+if ($table_check_users && mysqli_num_rows($table_check_users) > 0) {
+    mysqli_free_result($table_check_users);
+    $user_check = "SELECT COUNT(*) as count FROM users WHERE email = ?";
+    $user_stmt = mysqli_prepare($conn, $user_check);
+    if ($user_stmt) {
+        mysqli_stmt_bind_param($user_stmt, "s", $employee['email']);
+        mysqli_stmt_execute($user_stmt);
+        $user_result = mysqli_stmt_get_result($user_stmt);
+        $user_count = mysqli_fetch_assoc($user_result)['count'];
+        if ($user_count > 0) {
+            $related_data[] = "$user_count user account(s)";
+        }
+        mysqli_stmt_close($user_stmt);
+    }
+} else {
+    if ($table_check_users) {
+        mysqli_free_result($table_check_users);
+    }
 }
 
 // If there are related records, prevent deletion
 if (!empty($related_data)) {
-    echo json_encode([
+    send_json([
         'success' => false, 
         'message' => "Cannot delete '$employee_name' - employee has existing data that must be removed first.",
         'related_data' => $related_data
-    ]);
-    exit();
+    ], 409);
 }
 
 // Start transaction
@@ -194,21 +279,52 @@ try {
     // Commit transaction
     mysqli_commit($conn);
     
-    echo json_encode([
+    send_json([
         'success' => true, 
         'message' => "Employee '$employee_name' deleted successfully"
-    ]);
+    ], 200);
     
 } catch (Exception $e) {
     // Rollback transaction on error
     mysqli_rollback($conn);
     
-    echo json_encode(['success' => false, 'message' => 'Error deleting employee: ' . $e->getMessage()]);
+    send_json_error('Error deleting employee: ' . $e->getMessage(), 500);
 }
 
 // Close statements
 if (isset($delete_user_stmt)) mysqli_stmt_close($delete_user_stmt);
 if (isset($delete_employee_stmt)) mysqli_stmt_close($delete_employee_stmt);
+if (isset($check_stmt)) mysqli_stmt_close($check_stmt);
 
 mysqli_close($conn);
+
+} catch (Throwable $e) {
+    // Clean any output that might have been generated
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    
+    // Log the error with full details
+    $error_details = [
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
+    ];
+    error_log("Delete Employee Error: " . print_r($error_details, true));
+    
+    // Send clean JSON error response
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+    }
+    
+    // Ensure we only output JSON - no whitespace or other content
+    echo json_encode([
+        'success' => false, 
+        'message' => 'An error occurred while processing your request. Please check server logs for details.',
+        'error' => $e->getMessage()
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit();
+}
 ?>

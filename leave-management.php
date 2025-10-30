@@ -1078,7 +1078,7 @@ include 'includes/header.php';
 </div> <!-- End modal overlay -->
 
 <!-- Success Message Modal -->
-<div id="successModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center h-full w-full hidden z-50">
+<div id="successModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center h-full w-full hidden z-[10000]">
     <div class="relative mx-auto p-8 border w-96 shadow-2xl rounded-2xl bg-white transform transition-all duration-300 scale-95" id="successModalContent">
         <div class="text-center">
             <!-- Success Icon -->
@@ -1101,7 +1101,7 @@ include 'includes/header.php';
 </div>
 
 <!-- Error Message Modal -->
-<div id="errorModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center h-full w-full hidden z-50">
+<div id="errorModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center h-full w-full hidden z-[10000]">
     <div class="relative mx-auto p-8 border w-96 shadow-2xl rounded-2xl bg-white transform transition-all duration-300 scale-95" id="errorModalContent">
         <div class="text-center">
             <!-- Error Icon -->
@@ -2096,12 +2096,14 @@ document.getElementById('secureDeleteForm').addEventListener('submit', function(
     
     // Validate password
     if (!password || password.trim() === '') {
+        // For validation errors, keep modal open but show error with higher z-index
         showErrorModal('Password Required', 'Please enter your password to continue.');
         return;
     }
     
     // Validate CAPTCHA (use trimmed, uppercased value)
     if (captchaInput !== currentCaptcha) {
+        // For validation errors, keep modal open but show error with higher z-index
         showErrorModal('CAPTCHA Error', 'CAPTCHA code is incorrect. Please try again.');
         refreshCaptcha();
         return;
@@ -2119,6 +2121,7 @@ document.getElementById('secureDeleteForm').addEventListener('submit', function(
     // Ensure all required fields are present
     const finalConfirmation = document.getElementById('finalConfirmation');
     if (!finalConfirmation || !finalConfirmation.checked) {
+        // For validation errors, keep modal open but show error with higher z-index
         showErrorModal('Confirmation Required', 'Please check the final confirmation checkbox to proceed.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-trash-alt mr-1"></i>Delete Permanently';
@@ -2142,16 +2145,28 @@ document.getElementById('secureDeleteForm').addEventListener('submit', function(
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Close the secure delete modal first
             closeSecureDeleteModal();
-            showSuccessModal('Delete Successful', 'The leave request has been permanently deleted.');
-            // Refresh the page to update the list
+            
+            // Wait for modal to close, then show success
             setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+                showSuccessModal('Delete Successful', 'The leave request has been permanently deleted.');
+                // Refresh the page to update the list
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }, 350);
         } else {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-trash-alt mr-1"></i>Delete Permanently';
-            showErrorModal('Delete Failed', data.message || 'Failed to delete leave request');
+            
+            // Close the secure delete modal first
+            closeSecureDeleteModal();
+            
+            // Wait for modal to close, then show error
+            setTimeout(() => {
+                showErrorModal('Delete Failed', data.message || 'Failed to delete leave request');
+            }, 350);
             
             // Refresh CAPTCHA on failure
             refreshCaptcha();
@@ -2161,7 +2176,15 @@ document.getElementById('secureDeleteForm').addEventListener('submit', function(
         console.error('Error:', error);
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-trash-alt mr-1"></i>Delete Permanently';
-        showErrorModal('Network Error', 'A network error occurred while deleting the leave request.');
+        
+        // Close the secure delete modal first
+        closeSecureDeleteModal();
+        
+        // Wait for modal to close, then show error
+        setTimeout(() => {
+            showErrorModal('Network Error', 'A network error occurred while deleting the leave request.');
+        }, 350);
+        
         refreshCaptcha();
     });
 });

@@ -1362,7 +1362,7 @@ function populateSalaryDetails() {
         const baseSalary = selectedOption.getAttribute('data-base-salary');
         const grade = selectedOption.getAttribute('data-grade');
         
-        // Populate salary fields
+        // Populate salary fields ONLY - don't affect other form fields
         const basicSalaryField = getElementSafely('basic_salary');
         const salaryGradeField = getElementSafely('salary_grade');
         const stepIncrementField = getElementSafely('step_increment');
@@ -1434,6 +1434,7 @@ function populateSalaryDetails() {
         // Show success message
         showMessage('success', 'Salary details populated from selected structure!');
     } else {
+        // Only clear salary-related fields when no structure is selected
         clearSalaryDetails();
     }
 }
@@ -1514,6 +1515,7 @@ function clearSalaryDetails() {
     const salaryGradeField = getElementSafely('salary_grade');
     const stepIncrementField = getElementSafely('step_increment');
     
+    // Only clear salary-related fields, preserve other form data
     if (basicSalaryField) {
         basicSalaryField.value = '';
         basicSalaryField.classList.remove('bg-green-50', 'border-green-300');
@@ -1531,6 +1533,12 @@ function clearSalaryDetails() {
     const salaryStructureInfo = getElementSafely('salary_structure_info');
     if (salaryStructureInfo) {
         salaryStructureInfo.classList.add('hidden');
+    }
+    
+    // Clear salary structure details
+    const salaryStructureDetails = getElementSafely('salary_structure_details');
+    if (salaryStructureDetails) {
+        salaryStructureDetails.innerHTML = '';
     }
 }
 

@@ -146,7 +146,7 @@ include 'includes/header.php';
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div class="grid grid-cols-2 gap-4">
-                <a href="add-employee.php" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                <a href="admin-employee.php" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                     <i class="fas fa-user-plus text-blue-600 text-xl mr-3"></i>
                     <span class="text-blue-800 font-medium">Add Employee</span>
                 </a>

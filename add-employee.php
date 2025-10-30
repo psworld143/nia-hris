@@ -1,10 +1,15 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
+require_once 'includes/roles.php';
 
-// Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+// Check if user is logged in and can add employees
+if (!isset($_SESSION['user_id']) || !canAddEmployees()) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
@@ -18,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
+    // Ensure JSON headers for all responses
+    set_json_response_headers(200);
     // Validate and sanitize input data
     $first_name = sanitize_input($_POST['first_name'] ?? '');
     $last_name = sanitize_input($_POST['last_name'] ?? '');
@@ -144,7 +151,7 @@ try {
         ) VALUES (?, ?, 'Grade 3', 30000.00, 25000.00, 50000.00, 1000.00, 3, 1, ?)";
         
         $create_stmt = mysqli_prepare($conn, $create_structure_query);
-        mysqli_stmt_bind_param($create_stmt, 'si', $position, $user_id);
+        mysqli_stmt_bind_param($create_stmt, 'sii', $position, $department, $_SESSION['user_id']);
         
         if (!mysqli_stmt_execute($create_stmt)) {
             echo json_encode([
@@ -155,14 +162,14 @@ try {
         }
         
         // Log the automatic creation
-        error_log("Auto-created salary structure for employee position: {$position} by user: {$user_id}");
+        error_log("Auto-created salary structure for employee position: {$position} by user: {$_SESSION['user_id']}");
     }
 
     // Hash password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
     // Insert new employee
-    $insert_query = "INSERT INTO employees (employee_id, first_name, last_name, email, password, position, department, employee_type, hire_date, phone, address, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $insert_query = "INSERT INTO employees (employee_id, first_name, last_name, email, password, position, department, employee_type, hire_date, phone, address, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
     $insert_stmt = mysqli_prepare($conn, $insert_query);
     if (!$insert_stmt) {
@@ -191,7 +198,7 @@ try {
     $new_employee_id = mysqli_insert_id($conn);
 
     // Return success response
-    echo json_encode([
+    send_json([
         'success' => true,
         'message' => 'Employee added successfully',
         'employee_id' => $new_employee_id,
@@ -206,16 +213,14 @@ try {
             'employee_type' => $employee_type,
             'is_active' => $is_active
         ]
-    ]);
+    ], 200);
 
 } catch (Exception $e) {
     // Log error
     error_log("Error adding employee: " . $e->getMessage());
     
-    echo json_encode([
-        'success' => false,
-        'message' => 'An error occurred while adding the employee. Please try again.'
-    ]);
+    // Ensure we return JSON even on error
+    send_json_error('An error occurred while adding the employee: ' . $e->getMessage(), 500);
 }
 
 mysqli_close($conn);

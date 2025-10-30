@@ -4,13 +4,22 @@
  * Marks DTR card as verified by authorized personnel
  */
 
+// Prevent any output before JSON
+ob_start();
+
+// Suppress error display to prevent HTML in JSON response
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once 'config/database.php';
 require_once 'includes/functions.php';
+require_once 'includes/roles.php';
 
-// Set JSON header
+// Clean output buffer and set JSON header
+ob_clean();
 header('Content-Type: application/json');
 
 // Check permissions
@@ -44,7 +53,9 @@ if (mysqli_stmt_execute($stmt)) {
     
     if ($affected_rows > 0) {
         // Log activity
-        logActivity('VERIFY_DTR_CARD', "Verified DTR card ID: $dtr_id", $conn);
+        if (function_exists('logActivity')) {
+            logActivity('VERIFY_DTR_CARD', "Verified DTR card ID: $dtr_id", $conn);
+        }
         
         echo json_encode([
             'success' => true,

@@ -578,18 +578,51 @@ function saveAllChanges() {
             payroll_data: payrollData
         })
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        // Get response text first to see what we're dealing with
+        return response.text().then(text => {
+            console.log('Raw response:', text);
+            
+            try {
+                const data = JSON.parse(text);
+                console.log('Parsed JSON response:', data);
+                return { response, data };
+            } catch (e) {
+                console.error('Failed to parse JSON response:', e);
+                console.error('Response text that failed to parse:', text);
+                throw new Error('Invalid JSON response: ' + text.substring(0, 200));
+            }
+        });
+    })
+    .then(({ response, data }) => {
+        console.log('=== PAYROLL SAVE RESULT ===');
+        console.log('Success:', data.success);
+        console.log('Message:', data.message);
+        console.log('Error Type:', data.error_type || 'N/A');
+        console.log('Saved Count:', data.saved || 'N/A');
+        console.log('Error Count:', data.errors || 'N/A');
+        
         if (data.success) {
             showToast(data.message, 'success');
             setTimeout(() => location.reload(), 1500);
         } else {
-            showToast(data.message, 'error');
+            console.error('=== PAYROLL SAVE FAILED ===');
+            console.error('Error Message:', data.message);
+            console.error('Full Error Data:', data);
+            showToast(data.message || 'Error saving payroll data', 'error');
         }
     })
     .catch(error => {
-        showToast('Error saving payroll data', 'error');
-        console.error(error);
+        console.error('=== FETCH ERROR ===');
+        console.error('Error Type:', error.name);
+        console.error('Error Message:', error.message);
+        console.error('Error Stack:', error.stack);
+        console.error('Full Error Object:', error);
+        
+        showToast('Error saving payroll data: ' + error.message, 'error');
     });
 }
 

@@ -20,7 +20,7 @@ try {
     error_log("User Role: " . ($_SESSION['role'] ?? 'Not set'));
 
 // Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager', 'employee'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager', 'employee'])) {
     error_log("❌ AUTHORIZATION ERROR: Unauthorized access attempt");
     ob_clean(); // Clear any output buffer
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
@@ -177,11 +177,19 @@ error_log("  Default Days: " . ($leave_type['default_days_per_year'] ?? 'Not set
 // Check leave balance based on source table - using new allowance tables
 $balance_query = "";
 if ($source_table === 'employee') {
-    $balance_query = "SELECT total_days, used_days, (total_days - used_days) as remaining_days 
+    $balance_query = "SELECT 
+                      COALESCE(total_days, 0) as total_days, 
+                      COALESCE(used_days, 0) as used_days, 
+                      COALESCE((total_days - used_days), 0) as remaining_days,
+                      COALESCE(total_days, 0) - COALESCE(used_days, 0) as calculated_remaining
                       FROM employee_leave_allowances 
                       WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
 } else {
-    $balance_query = "SELECT total_days, used_days, (total_days - used_days) as remaining_days 
+    $balance_query = "SELECT 
+                      COALESCE(total_days, 0) as total_days, 
+                      COALESCE(used_days, 0) as used_days, 
+                      COALESCE((total_days - used_days), 0) as remaining_days,
+                      COALESCE(total_days, 0) - COALESCE(used_days, 0) as calculated_remaining
                       FROM employee_leave_allowances 
                       WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
 }
@@ -193,15 +201,37 @@ mysqli_stmt_execute($balance_stmt);
 $balance_result = mysqli_stmt_get_result($balance_stmt);
 
 if (mysqli_num_rows($balance_result) === 0) {
-    // No balance found - this should be initialized by the leave allowance calculator
-    // For now, use default leave days, but recommend running the calculator first
-    $remaining_days = $leave_type['default_days_per_year'];
+    // No balance found - try to calculate or use default
+    require_once 'includes/leave_allowance_calculator.php';
+    $calculator = new LeaveAllowanceCalculator($conn);
+    $calculated_allowance = $calculator->calculateLeaveAllowance($employee_id, $source_table, $current_year, $leave_type_id);
     
-    // Log that balance needs to be initialized
-    error_log("Leave balance not found for " . ($source_table === 'employee' ? 'employee' : 'employee') . " ID: $employee_id, Year: $current_year. Using default: $remaining_days days.");
+    if ($calculated_allowance && isset($calculated_allowance['remaining_days'])) {
+        $remaining_days = $calculated_allowance['remaining_days'];
+        error_log("Leave balance not found, calculated from allowance calculator: $remaining_days days.");
+    } else {
+        // Fallback to default leave days
+        $remaining_days = $leave_type['default_days_per_year'] ?? 5;
+        error_log("Leave balance not found for employee ID: $employee_id, Year: $current_year. Using default: $remaining_days days.");
+    }
 } else {
     $balance = mysqli_fetch_assoc($balance_result);
-    $remaining_days = $balance['remaining_days'];
+    
+    // Log balance details for debugging
+    error_log("Balance record found:");
+    error_log("  total_days: " . ($balance['total_days'] ?? 'NULL'));
+    error_log("  used_days: " . ($balance['used_days'] ?? 'NULL'));
+    error_log("  remaining_days (from DB): " . ($balance['remaining_days'] ?? 'NULL'));
+    error_log("  calculated_remaining: " . ($balance['calculated_remaining'] ?? 'NULL'));
+    
+    // Ensure total_days and used_days are numbers
+    $total_days_db = (float)($balance['total_days'] ?? 0);
+    $used_days_db = (float)($balance['used_days'] ?? 0);
+    
+    // Calculate remaining days from the actual values
+    $remaining_days = max(0, $total_days_db - $used_days_db);
+    
+    error_log("  Final calculated remaining_days: $remaining_days");
 }
 
 // Check if employee has enough leave balance

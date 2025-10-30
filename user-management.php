@@ -30,7 +30,8 @@ $stats = [
     'admin' => count(array_filter($users, fn($u) => $u['role'] === 'admin')),
     'hr_manager' => count(array_filter($users, fn($u) => $u['role'] === 'hr_manager')),
     'human_resource' => count(array_filter($users, fn($u) => $u['role'] === 'human_resource')),
-    'nurse' => count(array_filter($users, fn($u) => $u['role'] === 'nurse'))
+    'nurse' => count(array_filter($users, fn($u) => $u['role'] === 'nurse')),
+    'employee' => count(array_filter($users, fn($u) => $u['role'] === 'employee'))
 ];
 
 include 'includes/header.php';
@@ -175,26 +176,34 @@ include 'includes/header.php';
                             'admin' => 'bg-purple-100 text-purple-800 border-purple-200',
                             'hr_manager' => 'bg-blue-100 text-blue-800 border-blue-200',
                             'human_resource' => 'bg-green-100 text-green-800 border-green-200',
-                            'nurse' => 'bg-pink-100 text-pink-800 border-pink-200'
+                            'nurse' => 'bg-pink-100 text-pink-800 border-pink-200',
+                            'employee' => 'bg-gray-100 text-gray-800 border-gray-200'
                         ];
                         $role_icons = [
                             'super_admin' => 'fa-crown',
                             'admin' => 'fa-user-shield',
                             'hr_manager' => 'fa-user-tie',
                             'human_resource' => 'fa-user',
-                            'nurse' => 'fa-user-nurse'
+                            'nurse' => 'fa-user-nurse',
+                            'employee' => 'fa-user-circle'
                         ];
                         $role_display = [
                             'super_admin' => 'Super Admin',
                             'admin' => 'Admin',
                             'hr_manager' => 'HR Manager',
                             'human_resource' => 'Human Resource',
-                            'nurse' => 'Nurse'
+                            'nurse' => 'Nurse',
+                            'employee' => 'Employee'
                         ];
+                        // Get role with fallback to prevent undefined key errors
+                        $user_role = $user['role'] ?? 'unknown';
+                        $role_badge = $role_badges[$user_role] ?? 'bg-gray-100 text-gray-800 border-gray-200';
+                        $role_icon = $role_icons[$user_role] ?? 'fa-user';
+                        $role_name = $role_display[$user_role] ?? ucfirst(str_replace('_', ' ', $user_role));
                         ?>
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full border <?php echo $role_badges[$user['role']]; ?>">
-                            <i class="fas <?php echo $role_icons[$user['role']]; ?> mr-1"></i>
-                            <?php echo $role_display[$user['role']]; ?>
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full border <?php echo $role_badge; ?>">
+                            <i class="fas <?php echo $role_icon; ?> mr-1"></i>
+                            <?php echo $role_name; ?>
                         </span>
                     </td>
                     <td class="px-6 py-4">

@@ -2,6 +2,7 @@
 session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
+require_once 'includes/roles.php';
 require_once 'includes/id_encryption.php';
 
 // Check database connection
@@ -12,8 +13,8 @@ if (!$conn || mysqli_connect_errno()) {
           </div>');
 }
 
-// Check if user is logged in and has appropriate role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
+// Check if user is logged in and can add employees
+if (!isset($_SESSION['user_id']) || !canAddEmployees()) {
     header('Location: index.php');
     exit();
 }
@@ -174,6 +175,11 @@ include 'includes/header.php';
             <a href="add-employee-comprehensive-form.php" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
                 <i class="fas fa-plus mr-2"></i>Add Employee
             </a>
+            <?php if (canManageSalary()): ?>
+            <a href="add-employee-salary.php" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
+                <i class="fas fa-money-bill-wave mr-2"></i>Add Salary
+            </a>
+            <?php endif; ?>
             <a href="manage-degrees.php" class="bg-seait-dark text-white px-4 py-2 rounded-lg hover:bg-gray-800 transform transition-all hover:scale-105 font-medium">
                 <i class="fas fa-graduation-cap mr-2"></i>Manage Degrees
             </a>
@@ -611,12 +617,27 @@ if (addEmployeeForm) {
         body: formData
     })
     .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned non-JSON response: ' + text.substring(0, 100));
+            });
+        }
+        
         return response.json();
     })
     .then(data => {
+        console.log('Response data:', data);
+        
         if (data.success) {
             showToast('Employee added successfully!', 'success');
             closeAddEmployeeModal();
@@ -641,7 +662,7 @@ if (addEmployeeForm) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Network error. Please try again.', 'error');
+        showToast('Error: ' + error.message, 'error');
         
         // Re-enable form fields on error
         formFields.forEach(field => field.disabled = false);
@@ -737,10 +758,25 @@ function deleteEmployee(employeeId, employeeName) {
         })
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
+        // Try to get response text first to see what we're getting
+        return response.text().then(text => {
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // If not JSON, show the raw text (might be HTML error page)
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned invalid response. Check console for details.');
+            }
+            
+            if (!response.ok) {
+                // Response was parsed but status is not OK
+                const errorMsg = data.message || data.error || `HTTP error! status: ${response.status}`;
+                throw new Error(errorMsg);
+            }
+            
+            return data;
+        });
     })
     .then(data => {
         if (data.success) {
@@ -768,7 +804,8 @@ function deleteEmployee(employeeId, employeeName) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Network error. Please try again.', 'error');
+        const errorMessage = error.message || 'Network error. Please try again.';
+        showToast(errorMessage, 'error');
     })
     .finally(() => {
         // Reset button state
