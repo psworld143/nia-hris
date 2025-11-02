@@ -271,9 +271,29 @@ if (mysqli_num_rows($overlap_result) > 0) {
     exit();
 }
 
-// Insert leave request based on source table - auto-approved since HR is creating it
+// Determine if request should be auto-approved or pending
+// Only HR/Admin can auto-approve; employees must wait for approval
+$is_hr_or_admin = in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager']);
 $hr_id = $_SESSION['user_id']; // HR user ID for approval tracking
 $current_timestamp = date('Y-m-d H:i:s');
+
+if ($is_hr_or_admin) {
+    // HR/Admin creating leave - auto-approve
+    $status = 'approved_by_hr';
+    $department_head_approval = 'approved';
+    $hr_approval = 'approved';
+    $department_head_approved_at = $current_timestamp;
+    $hr_approved_at = $current_timestamp;
+    error_log("✅ HR/Admin creating leave - will auto-approve");
+} else {
+    // Employee creating leave - set to pending
+    $status = 'pending';
+    $department_head_approval = null;
+    $hr_approval = null;
+    $department_head_approved_at = null;
+    $hr_approved_at = null;
+    error_log("✅ Employee creating leave - will set to pending for approval");
+}
 
 if ($source_table === 'employee') {
     $insert_query = "INSERT INTO employee_leave_requests (
@@ -281,14 +301,14 @@ if ($source_table === 'employee') {
                         status, department_head_approval, hr_approval, 
                         department_head_id, hr_approver_id, 
                         department_head_approved_at, hr_approved_at, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'approved_by_hr', 'approved', 'approved', ?, ?, ?, ?, NOW())";
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 } else {
     $insert_query = "INSERT INTO employee_leave_requests (
                         employee_id, leave_type_id, start_date, end_date, total_days, reason, 
                         status, department_head_approval, hr_approval,
                         department_head_id, hr_approver_id, 
                         department_head_approved_at, hr_approved_at, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'approved_by_hr', 'approved', 'approved', ?, ?, ?, ?, NOW())";
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 }
 
 $insert_stmt = mysqli_prepare($conn, $insert_query);
@@ -304,8 +324,12 @@ $hr_approver_id = null;
 if ($source_table === 'employee') {
     // For employee, set both IDs to NULL since HR is approving directly and constraints expect employee IDs
     $department_head_id = null;
-    $hr_approver_id = null;
-    error_log("✅ Employee leave: department_head_id and hr_approver_id set to NULL (HR direct approval)");
+    if ($is_hr_or_admin) {
+        $hr_approver_id = null; // HR/Admin approving - but set to NULL to avoid FK constraints
+    } else {
+        $hr_approver_id = null; // Employee request - no approver yet
+    }
+    error_log("✅ Employee leave: department_head_id and hr_approver_id set to NULL");
 } else {
     // For employees, department_head_id may exist, but hr_approver_id in schema references employees.id
     // The HR session user may not have a corresponding employees record, which would violate FK constraints.
@@ -314,8 +338,12 @@ if ($source_table === 'employee') {
     if (!is_numeric($department_head_id)) {
         $department_head_id = null;
     }
-    $hr_approver_id = null; // Avoid FK violation by defaulting to NULL
-    error_log("✅ Employee leave: department_head_id = " . ($department_head_id ?? 'NULL') . ", hr_approver_id = NULL (avoiding FK violation)");
+    if ($is_hr_or_admin) {
+        $hr_approver_id = null; // HR/Admin approving - but set to NULL to avoid FK constraints
+    } else {
+        $hr_approver_id = null; // Employee request - no approver yet
+    }
+    error_log("✅ Employee leave: department_head_id = " . ($department_head_id ?? 'NULL') . ", hr_approver_id = NULL");
 }
 
 error_log("Insert Parameters:");
@@ -325,12 +353,33 @@ error_log("  Start Date: " . $start_date);
 error_log("  End Date: " . $end_date);
 error_log("  Total Days: " . $total_days);
 error_log("  Reason Length: " . strlen($reason));
+error_log("  Status: " . $status);
 error_log("  Department Head ID: " . ($department_head_id ?? 'NULL'));
 error_log("  HR Approver ID: " . ($hr_approver_id ?? 'NULL'));
-error_log("  Timestamp: " . $current_timestamp);
+error_log("  Is HR/Admin: " . ($is_hr_or_admin ? 'Yes' : 'No'));
 
-// Bind parameters: employee/employee id (i), leave_type_id (i), dates (s,s), total_days (i), reason (s), dept_head_id (i), hr_approver_id (i), timestamps (s,s)
-if (!mysqli_stmt_bind_param($insert_stmt, 'iissisiiss', $employee_id, $leave_type_id, $start_date, $end_date, $total_days, $reason, $department_head_id, $hr_approver_id, $current_timestamp, $current_timestamp)) {
+// Bind parameters: employee_id (i), leave_type_id (i), dates (s,s), total_days (d), reason (s), status (s), dept_head_approval (s), hr_approval (s), dept_head_id (i), hr_approver_id (i), timestamps (s,s)
+// Note: total_days is decimal type, use 'd' for binding
+// For NULL values, bind them as NULL but keep the type specifier matching the column type
+$bind_result = mysqli_stmt_bind_param(
+    $insert_stmt, 
+    'iissdssssiiss',
+    $employee_id, 
+    $leave_type_id, 
+    $start_date, 
+    $end_date, 
+    $total_days, 
+    $reason, 
+    $status, 
+    $department_head_approval, 
+    $hr_approval, 
+    $department_head_id, 
+    $hr_approver_id, 
+    $department_head_approved_at, 
+    $hr_approved_at
+);
+
+if (!$bind_result) {
     error_log("❌ PARAMETER BINDING ERROR: " . mysqli_error($conn));
     throw new Exception("Failed to bind parameters: " . mysqli_error($conn));
 }
@@ -341,75 +390,88 @@ if (mysqli_stmt_execute($insert_stmt)) {
     $leave_request_id = mysqli_insert_id($conn);
     error_log("✅ Leave Request Inserted Successfully:");
     error_log("  Leave Request ID: " . $leave_request_id);
-    error_log("  Status: approved_by_hr (auto-approved)");
+    error_log("  Status: " . $status);
     
-    // Ensure leave allowance record exists before updating
-    if ($source_table === 'employee') {
-        $check_allowance_query = "SELECT id FROM employee_leave_allowances 
-                                  WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
-        $table_name = 'employee_leave_allowances';
-        $id_field = 'employee_id';
-    } else {
-        $check_allowance_query = "SELECT id FROM employee_leave_allowances 
-                                  WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
-        $table_name = 'employee_leave_allowances';
-        $id_field = 'employee_id';
-    }
-    
-    $check_stmt = mysqli_prepare($conn, $check_allowance_query);
-    mysqli_stmt_bind_param($check_stmt, 'iii', $employee_id, $leave_type_id, $current_year);
-    mysqli_stmt_execute($check_stmt);
-    $check_result = mysqli_stmt_get_result($check_stmt);
-    
-    if (mysqli_num_rows($check_result) == 0) {
-        error_log("⚠️ MISSING ALLOWANCE RECORD: Creating allowance record for " . $source_table . " ID " . $employee_id . " for leave type " . $leave_type_id);
+    // Only update leave balance if the request was auto-approved (HR/Admin created it)
+    // If it's pending (employee created it), balance will be updated when HR approves it
+    if ($is_hr_or_admin) {
+        error_log("✅ Auto-approved request - updating leave balance");
         
-        // Create missing allowance record using calculator
-        require_once 'includes/leave_allowance_calculator_v2.php';
-        $calculator = new LeaveAllowanceCalculatorV2($conn);
-        $calculator->updateLeaveBalance($employee_id, $source_table, $current_year, $leave_type_id);
+        // Ensure leave allowance record exists before updating
+        if ($source_table === 'employee') {
+            $check_allowance_query = "SELECT id FROM employee_leave_allowances 
+                                      WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+            $table_name = 'employee_leave_allowances';
+            $id_field = 'employee_id';
+        } else {
+            $check_allowance_query = "SELECT id FROM employee_leave_allowances 
+                                      WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+            $table_name = 'employee_leave_allowances';
+            $id_field = 'employee_id';
+        }
         
-        error_log("✅ ALLOWANCE RECORD CREATED: Record created for " . $source_table . " ID " . $employee_id);
-    }
-    
-    // Update leave balance in allowance tables
-    if ($source_table === 'employee') {
-        $update_balance_query = "UPDATE employee_leave_allowances 
-                                 SET used_days = used_days + ?, 
-                                     remaining_days = total_days - (used_days + ?),
-                                     updated_at = NOW()
-                                 WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
-    } else {
-        $update_balance_query = "UPDATE employee_leave_allowances 
-                                 SET used_days = used_days + ?, 
-                                     remaining_days = total_days - (used_days + ?),
-                                     updated_at = NOW()
-                                 WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
-    }
-    
-    error_log("Updating leave balance:");
-    error_log("  Table: " . ($source_table === 'employee' ? 'employee_leave_allowances' : 'employee_leave_allowances'));
-    error_log("  Adding used days: " . $total_days);
-    error_log("  Year: " . $current_year);
-    
-    $update_balance_stmt = mysqli_prepare($conn, $update_balance_query);
-    mysqli_stmt_bind_param($update_balance_stmt, 'ddiii', $total_days, $total_days, $employee_id, $leave_type_id, $current_year);
-    
-    if (mysqli_stmt_execute($update_balance_stmt)) {
-        $affected_rows = mysqli_stmt_affected_rows($update_balance_stmt);
-        error_log("✅ Leave Balance Updated:");
-        error_log("  Affected Rows: " . $affected_rows);
+        $check_stmt = mysqli_prepare($conn, $check_allowance_query);
+        mysqli_stmt_bind_param($check_stmt, 'iii', $employee_id, $leave_type_id, $current_year);
+        mysqli_stmt_execute($check_stmt);
+        $check_result = mysqli_stmt_get_result($check_stmt);
         
-        if ($affected_rows === 0) {
-            error_log("⚠️ WARNING: No balance record found to update - this might be expected if balance hasn't been initialized");
+        if (mysqli_num_rows($check_result) == 0) {
+            error_log("⚠️ MISSING ALLOWANCE RECORD: Creating allowance record for " . $source_table . " ID " . $employee_id . " for leave type " . $leave_type_id);
+            
+            // Create missing allowance record using calculator
+            require_once 'includes/leave_allowance_calculator_v2.php';
+            $calculator = new LeaveAllowanceCalculatorV2($conn);
+            $calculator->updateLeaveBalance($employee_id, $source_table, $current_year, $leave_type_id);
+            
+            error_log("✅ ALLOWANCE RECORD CREATED: Record created for " . $source_table . " ID " . $employee_id);
+        }
+        
+        // Update leave balance in allowance tables
+        if ($source_table === 'employee') {
+            $update_balance_query = "UPDATE employee_leave_allowances 
+                                     SET used_days = used_days + ?, 
+                                         remaining_days = total_days - (used_days + ?),
+                                         updated_at = NOW()
+                                     WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+        } else {
+            $update_balance_query = "UPDATE employee_leave_allowances 
+                                     SET used_days = used_days + ?, 
+                                         remaining_days = total_days - (used_days + ?),
+                                         updated_at = NOW()
+                                     WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+        }
+        
+        error_log("Updating leave balance:");
+        error_log("  Table: " . ($source_table === 'employee' ? 'employee_leave_allowances' : 'employee_leave_allowances'));
+        error_log("  Adding used days: " . $total_days);
+        error_log("  Year: " . $current_year);
+        
+        $update_balance_stmt = mysqli_prepare($conn, $update_balance_query);
+        mysqli_stmt_bind_param($update_balance_stmt, 'ddiii', $total_days, $total_days, $employee_id, $leave_type_id, $current_year);
+        
+        if (mysqli_stmt_execute($update_balance_stmt)) {
+            $affected_rows = mysqli_stmt_affected_rows($update_balance_stmt);
+            error_log("✅ Leave Balance Updated:");
+            error_log("  Affected Rows: " . $affected_rows);
+            
+            if ($affected_rows === 0) {
+                error_log("⚠️ WARNING: No balance record found to update - this might be expected if balance hasn't been initialized");
+            }
+        } else {
+            error_log("❌ BALANCE UPDATE ERROR: " . mysqli_error($conn));
         }
     } else {
-        error_log("❌ BALANCE UPDATE ERROR: " . mysqli_error($conn));
+        error_log("✅ Pending request - leave balance will be updated when HR approves");
     }
     
     error_log("✅ LEAVE ADDITION PROCESS COMPLETED SUCCESSFULLY");
     ob_clean(); // Clear any output buffer
-    echo json_encode(['success' => true, 'message' => 'Leave added successfully and automatically approved']);
+    
+    if ($is_hr_or_admin) {
+        echo json_encode(['success' => true, 'message' => 'Leave added successfully and automatically approved']);
+    } else {
+        echo json_encode(['success' => true, 'message' => 'Leave request submitted successfully. Waiting for HR/Admin approval.']);
+    }
 } else {
     error_log("❌ DATABASE INSERT ERROR: " . mysqli_error($conn));
     error_log("  SQL Error Code: " . mysqli_errno($conn));

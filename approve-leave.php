@@ -95,31 +95,58 @@ $update_stmt = mysqli_prepare($conn, $update_query);
 mysqli_stmt_bind_param($update_stmt, 'sssisi', $new_status, $hr_approval, $hr_comment, $hr_id, $current_time, $leave_id);
 
 if (mysqli_stmt_execute($update_stmt)) {
-    // If rejected, restore leave balance in allowance tables
-    if ($action === 'reject') {
-        // Get leave request details to restore balance
-        if ($table === 'employee') {
-            $balance_query = "UPDATE employee_leave_allowances 
-                             SET used_days = used_days - (SELECT total_days FROM employee_leave_requests WHERE id = ?),
-                                 remaining_days = total_days - (used_days - (SELECT total_days FROM employee_leave_requests WHERE id = ?)),
-                                 updated_at = NOW()
-                             WHERE employee_id = (SELECT employee_id FROM employee_leave_requests WHERE id = ?) 
-                             AND leave_type_id = (SELECT leave_type_id FROM employee_leave_requests WHERE id = ?) 
-                             AND year = ?";
-        } else {
-            $balance_query = "UPDATE faculty_leave_allowances 
-                             SET used_days = used_days - (SELECT total_days FROM employee_leave_requests WHERE id = ?),
-                                 remaining_days = total_days - (used_days - (SELECT total_days FROM employee_leave_requests WHERE id = ?)),
-                                 updated_at = NOW()
-                             WHERE employee_id = (SELECT employee_id FROM employee_leave_requests WHERE id = ?) 
-                             AND leave_type_id = (SELECT leave_type_id FROM employee_leave_requests WHERE id = ?) 
-                             AND year = ?";
-        }
+    $current_year = date('Y');
+    
+    // Get leave request details for balance update
+    $leave_details_query = "SELECT employee_id, leave_type_id, total_days FROM employee_leave_requests WHERE id = ?";
+    $leave_details_stmt = mysqli_prepare($conn, $leave_details_query);
+    mysqli_stmt_bind_param($leave_details_stmt, 'i', $leave_id);
+    mysqli_stmt_execute($leave_details_stmt);
+    $leave_details_result = mysqli_stmt_get_result($leave_details_stmt);
+    $leave_details = mysqli_fetch_assoc($leave_details_result);
+    
+    if ($leave_details) {
+        $employee_id = $leave_details['employee_id'];
+        $leave_type_id = $leave_details['leave_type_id'];
+        $total_days = $leave_details['total_days'];
         
-        $current_year = date('Y');
-        $balance_stmt = mysqli_prepare($conn, $balance_query);
-        mysqli_stmt_bind_param($balance_stmt, 'iiiii', $leave_id, $leave_id, $leave_id, $leave_id, $current_year);
-        mysqli_stmt_execute($balance_stmt);
+        if ($action === 'approve') {
+            // Update leave balance when approving - deduct from available balance
+            // Ensure leave allowance record exists
+            $check_allowance_query = "SELECT id FROM employee_leave_allowances 
+                                     WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+            $check_stmt = mysqli_prepare($conn, $check_allowance_query);
+            mysqli_stmt_bind_param($check_stmt, 'iii', $employee_id, $leave_type_id, $current_year);
+            mysqli_stmt_execute($check_stmt);
+            $check_result = mysqli_stmt_get_result($check_stmt);
+            
+            if (mysqli_num_rows($check_result) == 0) {
+                // Create missing allowance record using calculator
+                require_once 'includes/leave_allowance_calculator_v2.php';
+                $calculator = new LeaveAllowanceCalculatorV2($conn);
+                $calculator->updateLeaveBalance($employee_id, 'employee', $current_year, $leave_type_id);
+            }
+            
+            // Update leave balance - deduct used days
+            $balance_query = "UPDATE employee_leave_allowances 
+                             SET used_days = used_days + ?,
+                                 remaining_days = total_days - (used_days + ?),
+                                 updated_at = NOW()
+                             WHERE employee_id = ? AND leave_type_id = ? AND year = ?";
+            
+            $balance_stmt = mysqli_prepare($conn, $balance_query);
+            mysqli_stmt_bind_param($balance_stmt, 'ddiii', $total_days, $total_days, $employee_id, $leave_type_id, $current_year);
+            
+            if (mysqli_stmt_execute($balance_stmt)) {
+                error_log("✅ Leave balance updated for approved request - ID: $leave_id, Employee: $employee_id, Days: $total_days");
+            } else {
+                error_log("❌ Error updating leave balance: " . mysqli_error($conn));
+            }
+        } else if ($action === 'reject') {
+            // If rejected, no need to update balance since pending requests don't affect balance
+            // Balance was never deducted for pending requests
+            error_log("✅ Leave request rejected - no balance change needed (was pending)");
+        }
     }
     
     echo json_encode(['success' => true, 'message' => 'Leave request ' . $action . 'd successfully']);
