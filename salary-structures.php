@@ -89,7 +89,7 @@ $structures_query = "SELECT ss.*, u.first_name, u.last_name
                      FROM salary_structures ss 
                      LEFT JOIN users u ON ss.created_by = u.id 
                      WHERE ss.is_active = 1 
-                     ORDER BY ss.department, ss.grade_level, ss.position_title";
+                     ORDER BY ss.grade_level, ss.position_title";
 $structures_result = mysqli_query($conn, $structures_query);
 
 // Check for query errors
@@ -191,7 +191,6 @@ include 'includes/header.php';
             <thead class="bg-gradient-to-r from-green-600 to-green-700">
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Position</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Department</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Grade Level</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Base Salary</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Salary Range</th>
@@ -203,7 +202,7 @@ include 'includes/header.php';
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php if (empty($structures)): ?>
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                             <i class="fas fa-sitemap text-4xl mb-4"></i>
                             <p>No salary structures found.</p>
                             <a href="seed-salary-structures.php" class="inline-block mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
@@ -217,11 +216,7 @@ include 'includes/header.php';
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($structure['position_title']); ?></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
-                                    <?php echo htmlspecialchars($structure['department'] ?? 'N/A'); ?>
-                                </span>
-                            </td>
+                            
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                                     <?php echo htmlspecialchars($structure['grade_level']); ?>

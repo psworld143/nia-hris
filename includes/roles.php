@@ -242,8 +242,12 @@ function getRoleDisplayName($role) {
  * Get role badge HTML
  */
 function getRoleBadge($role) {
+    // Hide Superadmin badge from header
+    if ($role === ROLE_SUPER_ADMIN) {
+        return '';
+    }
+    
     $badges = [
-        ROLE_SUPER_ADMIN => '<span class="badge bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-semibold">SUPER ADMIN</span>',
         ROLE_ADMIN => '<span class="badge bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-semibold">ADMIN</span>',
         ROLE_HR_MANAGER => '<span class="badge bg-gradient-to-r from-blue-500 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">HR MANAGER</span>',
         ROLE_HR_STAFF => '<span class="badge bg-gradient-to-r from-cyan-500 to-cyan-600 text-white px-3 py-1 rounded-full text-xs font-semibold">HR STAFF</span>',

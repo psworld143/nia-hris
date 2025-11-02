@@ -13,8 +13,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'super_admin') {
 
 $page_title = 'User Management';
 
-// Get all users
-$users_query = "SELECT * FROM users ORDER BY created_at DESC";
+// Get all users that are matched with employees
+$users_query = "SELECT u.* FROM users u 
+                INNER JOIN employees e ON u.email = e.email 
+                WHERE e.is_active = 1 
+                ORDER BY u.created_at DESC";
 $users_result = mysqli_query($conn, $users_query);
 $users = [];
 while ($user = mysqli_fetch_assoc($users_result)) {
@@ -809,4 +812,7 @@ document.getElementById('passwordResetSuccessModal').addEventListener('click', f
     }
 });
 </script>
+
+</body>
+</html>
 

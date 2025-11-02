@@ -87,15 +87,19 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Manage Departments</h1>
-            <p class="text-gray-600">View and manage department information</p>
-        </div>
-        <div class="flex space-x-3">
-            <button onclick="openAddDepartmentModal()" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-700 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
-                <i class="fas fa-plus mr-2"></i>Add Department
-            </button>
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-building mr-2"></i>Manage Departments
+                </h2>
+                <p class="opacity-90">View and manage department information</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openAddDepartmentModal()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Department
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -4,7 +4,7 @@ require_once 'config/database.php';
 require_once 'includes/functions.php';
 
 // Check if user is logged in and has human_resource role
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['super_admin', 'admin', 'human_resource', 'hr_manager'])) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
@@ -35,12 +35,11 @@ if (!$id || !in_array($type, ['employee', 'faculty']) || !in_array($action, ['re
 $criteria_validation = [];
 if (!empty($criteria_ids)) {
     $criteria_placeholders = str_repeat('?,', count($criteria_ids) - 1) . '?';
-    $criteria_query = "SELECT id, criteria_name, employee_type FROM regularization_criteria WHERE id IN ($criteria_placeholders) AND employee_type = ? AND is_active = 1";
+    $criteria_query = "SELECT id, criteria_name FROM regularization_criteria WHERE id IN ($criteria_placeholders) AND is_active = 1";
     $criteria_stmt = mysqli_prepare($conn, $criteria_query);
     
-    $criteria_params = array_merge($criteria_ids, [$type]);
-    $criteria_types = str_repeat('i', count($criteria_ids)) . 's';
-    mysqli_stmt_bind_param($criteria_stmt, $criteria_types, ...$criteria_params);
+    $criteria_types = str_repeat('i', count($criteria_ids));
+    mysqli_stmt_bind_param($criteria_stmt, $criteria_types, ...$criteria_ids);
     mysqli_stmt_execute($criteria_stmt);
     $criteria_result = mysqli_stmt_get_result($criteria_stmt);
     

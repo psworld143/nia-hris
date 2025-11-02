@@ -3,6 +3,7 @@ session_start();
 require_once 'config/database.php';
 require_once 'includes/functions.php';
 require_once 'includes/id_encryption.php';
+require_once 'includes/roles.php';
 
 // Check if user is logged in and has appropriate role
 if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'human_resource', 'hr_manager'])) {
@@ -139,20 +140,28 @@ $suggestions_result = mysqli_query($conn, $suggestions_query);
 include 'includes/header.php';
 ?>
 
-<div class="mb-6 sm:mb-8">
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-seait-dark mb-2">Training & Seminar Management</h1>
-            <p class="text-sm sm:text-base text-gray-600">Manage trainings, seminars, and professional development programs</p>
+<!-- Page Header -->
+<div class="mb-6">
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-chalkboard-teacher mr-2"></i>Training & Seminar Management
+                </h2>
+                <p class="opacity-90">Manage trainings, seminars, and professional development programs</p>
+            </div>
+            <div>
+                <?php echo getRoleBadge(getCurrentUserRole()); ?>
+            </div>
         </div>
-        <div class="flex space-x-2">
-            <a href="add-training.php" class="bg-seait-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition text-center">
-                <i class="fas fa-plus mr-2"></i>Add Training
-            </a>
-            <a href="training-suggestions.php" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-center">
-                <i class="fas fa-lightbulb mr-2"></i>View Suggestions
-            </a>
-        </div>
+    </div>
+    <div class="mt-4 flex justify-end space-x-3">
+        <a href="add-training.php" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
+            <i class="fas fa-plus mr-2"></i>Add Training
+        </a>
+        <a href="training-suggestions.php" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
+            <i class="fas fa-lightbulb mr-2"></i>View Suggestions
+        </a>
     </div>
 </div>
 

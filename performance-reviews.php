@@ -69,17 +69,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
             case 'delete_review':
                 $review_id = (int)$_POST['review_id'];
+                // Check if this is an AJAX request
+                $is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+                
                 if ($review_id > 0) {
                     $delete_query = "DELETE FROM performance_reviews WHERE id = ? AND reviewer_id = ? AND status = 'draft'";
                     $stmt = mysqli_prepare($conn, $delete_query);
                     mysqli_stmt_bind_param($stmt, "ii", $review_id, $user_id);
                     
                     if (mysqli_stmt_execute($stmt)) {
-                        $_SESSION['message'] = 'Performance review deleted successfully.';
-                        $_SESSION['message_type'] = 'success';
+                        if ($is_ajax) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => true, 'message' => 'Performance review deleted successfully.']);
+                            exit();
+                        } else {
+                            $_SESSION['message'] = 'Performance review deleted successfully.';
+                            $_SESSION['message_type'] = 'success';
+                        }
                     } else {
-                        $message = 'Error deleting performance review.';
-                        $message_type = 'error';
+                        if ($is_ajax) {
+                            header('Content-Type: application/json');
+                            echo json_encode(['success' => false, 'message' => 'Error deleting performance review: ' . mysqli_error($conn)]);
+                            exit();
+                        } else {
+                            $message = 'Error deleting performance review.';
+                            $message_type = 'error';
+                        }
+                    }
+                } else {
+                    if ($is_ajax) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'message' => 'Invalid review ID.']);
+                        exit();
                     }
                 }
                 break;
@@ -385,7 +406,7 @@ include 'includes/header.php';
                 </tr>
                 <?php else: ?>
                 <?php foreach ($reviews as $review): ?>
-                <tr class="hover:bg-green-50 transition-colors">
+                <tr class="hover:bg-green-50 transition-colors" data-review-id="<?php echo $review['id']; ?>">
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -464,13 +485,10 @@ include 'includes/header.php';
                                 <i class="fas fa-edit"></i>
                             </a>
                             <?php if ($review['status'] === 'draft'): ?>
-                            <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this review?')">
-                                <input type="hidden" name="action" value="delete_review">
-                                <input type="hidden" name="review_id" value="<?php echo $review['id']; ?>">
-                                <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            <button onclick="confirmDeleteReview(<?php echo $review['id']; ?>, '<?php echo htmlspecialchars($review['first_name'] . ' ' . $review['last_name']); ?>', '<?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $review['review_type']))); ?>', '<?php echo htmlspecialchars(date('M j, Y', strtotime($review['review_period_start'])) . ' - ' . date('M j, Y', strtotime($review['review_period_end']))); ?>')" 
+                                    class="text-red-600 hover:text-red-900 transition-colors" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -479,6 +497,86 @@ include 'includes/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteReviewModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+    <div class="relative w-full max-w-md mx-4">
+        <div class="bg-white rounded-2xl shadow-2xl transform transition-all">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-t-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-exclamation-triangle text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-white">Delete Performance Review</h3>
+                            <p class="text-red-100 text-sm">This action cannot be undone</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDeleteReviewModal()" class="text-white hover:text-red-200 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6">
+                <div class="flex items-start mb-6">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-trash-alt text-red-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="ml-4 flex-1">
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2">Are you sure?</h4>
+                        <p class="text-gray-600 mb-4">
+                            You are about to permanently delete the performance review for:
+                        </p>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-semibold text-gray-900" id="deleteReviewEmployeeName"></p>
+                                    <p class="text-sm text-gray-500" id="deleteReviewType"></p>
+                                    <p class="text-xs text-gray-400 mt-1" id="deleteReviewPeriod"></p>
+                                </div>
+                                <span class="px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>Permanent
+                                </span>
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        <strong>Warning:</strong> This will permanently remove this performance review from the system. 
+                                        All associated scores, goals, and comments will be deleted.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end space-x-3">
+                <button onclick="closeDeleteReviewModal()" 
+                        class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium transition-all transform hover:scale-105">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button onclick="deleteReview()" 
+                        id="confirmDeleteReviewBtn"
+                        class="px-6 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-medium shadow-lg transition-all transform hover:scale-105">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete Permanently
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -564,6 +662,103 @@ include 'includes/header.php';
 </div>
 
 <script>
+// Delete confirmation variables
+let deleteReviewId = null;
+let deleteReviewEmployeeName = '';
+let deleteReviewType = '';
+let deleteReviewPeriod = '';
+
+function confirmDeleteReview(id, employeeName, reviewType, reviewPeriod = '') {
+    deleteReviewId = id;
+    deleteReviewEmployeeName = employeeName;
+    deleteReviewType = reviewType;
+    deleteReviewPeriod = reviewPeriod;
+    
+    document.getElementById('deleteReviewEmployeeName').textContent = employeeName;
+    document.getElementById('deleteReviewType').textContent = `Review Type: ${reviewType}`;
+    document.getElementById('deleteReviewPeriod').textContent = reviewPeriod ? `Period: ${reviewPeriod}` : '';
+    document.getElementById('deleteReviewModal').classList.remove('hidden');
+}
+
+function closeDeleteReviewModal() {
+    document.getElementById('deleteReviewModal').classList.add('hidden');
+    deleteReviewId = null;
+    deleteReviewEmployeeName = '';
+    deleteReviewType = '';
+    deleteReviewPeriod = '';
+}
+
+function deleteReview() {
+    if (!deleteReviewId) {
+        showNotification('Error: No review selected', 'error');
+        return;
+    }
+    
+    const deleteBtn = document.getElementById('confirmDeleteReviewBtn');
+    const originalHTML = deleteBtn.innerHTML;
+    
+    // Show loading state
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Deleting...';
+    
+    // Create form data
+    const formData = new URLSearchParams();
+    formData.append('action', 'delete_review');
+    formData.append('review_id', deleteReviewId);
+    
+    fetch('performance-reviews.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData.toString()
+    })
+    .then(response => {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            return response.text().then(text => ({ success: text.includes('successfully'), message: text }));
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Performance review deleted successfully!', 'success');
+            closeDeleteReviewModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to delete performance review', 'error');
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = originalHTML;
+    });
+}
+
+function showNotification(message, type = 'info') {
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 function openCreateModal() {
     document.getElementById('createModal').classList.remove('hidden');
 }
@@ -576,6 +771,14 @@ function closeCreateModal() {
 document.getElementById('createModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeCreateModal();
+    }
+});
+
+// Close delete modal when clicking outside
+window.addEventListener('click', function(event) {
+    const deleteModal = document.getElementById('deleteReviewModal');
+    if (event.target == deleteModal) {
+        closeDeleteReviewModal();
     }
 });
 </script>

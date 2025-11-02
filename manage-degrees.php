@@ -202,18 +202,22 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Manage Degrees</h1>
-            <p class="text-gray-600">Manage educational degree levels and qualifications</p>
-        </div>
-        <div class="flex space-x-3">
-            <a href="admin-employee.php" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transform transition-all hover:scale-105 font-medium">
-                <i class="fas fa-arrow-left mr-2"></i>Back to Employees
-            </a>
-            <button onclick="openAddModal()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transform transition-all hover:scale-105 font-medium">
-                <i class="fas fa-plus mr-2"></i>Add New Degree
-            </button>
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-graduation-cap mr-2"></i>Manage Degrees
+                </h2>
+                <p class="opacity-90">Manage educational degree levels and qualifications</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="admin-employee.php" class="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Employees
+                </a>
+                <button onclick="openAddModal()" class="bg-white text-green-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add New Degree
+                </button>
+            </div>
         </div>
     </div>
 </div>

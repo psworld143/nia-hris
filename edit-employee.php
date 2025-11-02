@@ -223,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             email = ?, 
                             phone = ?, 
                             address = ?, 
-                            employee_id = ?, 
                             hire_date = ?, 
                             position = ?, 
                             department = ?, 
@@ -242,14 +241,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $update_employee_stmt = mysqli_prepare($conn, $update_employee_query);
                         
                         if (!empty($password)) {
-                            mysqli_stmt_bind_param($update_employee_stmt, "ssssssssssissi", 
-                                $first_name, $last_name, $email, $phone, $address, $emp_id, 
-                                $hire_date, $position, $department, $employee_type, $is_active, 
+                            mysqli_stmt_bind_param($update_employee_stmt, "sssssssssisi", 
+                                $first_name, $last_name, $email, $phone, $address,
+                                $hire_date, $position, $department, $employee_type, $is_active,
                                 $hashed_password, $employee_id);
                         } else {
-                            mysqli_stmt_bind_param($update_employee_stmt, "ssssssssssii", 
-                                $first_name, $last_name, $email, $phone, $address, $emp_id, 
-                                $hire_date, $position, $department, $employee_type, $is_active, 
+                            mysqli_stmt_bind_param($update_employee_stmt, "sssssssssii", 
+                                $first_name, $last_name, $email, $phone, $address,
+                                $hire_date, $position, $department, $employee_type, $is_active,
                                 $employee_id);
                         }
 
@@ -598,7 +597,7 @@ include 'includes/header.php';
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Employee ID <span class="text-red-500">*</span></label>
-                <input type="text" name="employee_id" value="<?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?>" required
+                <input type="text" name="employee_id" value="<?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?>" required readonly
                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all">
             </div>
             

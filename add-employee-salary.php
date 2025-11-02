@@ -178,7 +178,7 @@ include 'includes/header.php';
                         <?php foreach ($employees as $emp): ?>
                             <option value="<?php echo $emp['id']; ?>"
                                     data-salary="<?php echo $emp['current_salary']; ?>"
-                                    data-grade="<?php echo htmlspecialchars($emp['salary_grade']); ?>"
+                                    data-grade="<?php echo htmlspecialchars($emp['salary_grade'] ?? ''); ?>"
                                     data-step="<?php echo $emp['step_increment']; ?>"
                                     data-name="<?php echo htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name']); ?>">
                                 <?php echo htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name'] . ' (' . $emp['employee_id'] . ')'); ?>

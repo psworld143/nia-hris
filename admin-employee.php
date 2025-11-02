@@ -166,24 +166,31 @@ include 'includes/header.php';
 
 <!-- Page Header -->
 <div class="mb-6">
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Admin Employee</h1>
-            <p class="text-gray-600">Add new employees to the system</p>
+    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-users mr-2"></i>Admin Employee
+                </h2>
+                <p class="opacity-90">Add new employees to the system</p>
+            </div>
+            <div>
+                <?php echo getRoleBadge(getCurrentUserRole()); ?>
+            </div>
         </div>
-        <div class="flex space-x-3">
-            <a href="add-employee-comprehensive-form.php" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
-                <i class="fas fa-plus mr-2"></i>Add Employee
-            </a>
-            <?php if (canManageSalary()): ?>
-            <a href="add-employee-salary.php" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
-                <i class="fas fa-money-bill-wave mr-2"></i>Add Salary
-            </a>
-            <?php endif; ?>
-            <a href="manage-degrees.php" class="bg-seait-dark text-white px-4 py-2 rounded-lg hover:bg-gray-800 transform transition-all hover:scale-105 font-medium">
-                <i class="fas fa-graduation-cap mr-2"></i>Manage Degrees
-            </a>
-        </div>
+    </div>
+    <div class="mt-4 flex justify-end space-x-3">
+        <a href="add-employee-comprehensive-form.php" class="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-green-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
+            <i class="fas fa-plus mr-2"></i>Add Employee
+        </a>
+        <?php if (canManageSalary()): ?>
+        <a href="add-employee-salary.php" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-blue-500 transform transition-all hover:scale-105 hover:shadow-lg font-medium">
+            <i class="fas fa-money-bill-wave mr-2"></i>Add Salary
+        </a>
+        <?php endif; ?>
+        <a href="manage-degrees.php" class="bg-seait-dark text-white px-4 py-2 rounded-lg hover:bg-gray-800 transform transition-all hover:scale-105 font-medium">
+            <i class="fas fa-graduation-cap mr-2"></i>Manage Degrees
+        </a>
     </div>
 </div>
 
