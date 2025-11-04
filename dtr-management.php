@@ -210,7 +210,7 @@ include 'includes/header.php';
                 <p class="opacity-90">Upload and manage Daily Time Record cards for payroll processing</p>
             </div>
             <div class="flex items-center gap-3">
-                <?php if (function_exists('getRoleBadge')): ?>
+                <?php if (function_exists('getRoleBadge') && $_SESSION['role'] !== 'hr_manager'): ?>
                     <?php echo getRoleBadge($_SESSION['role']); ?>
                 <?php endif; ?>
                 <?php if ($can_upload): ?>

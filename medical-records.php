@@ -333,12 +333,11 @@ include 'includes/header.php';
                                 class="text-green-600 hover:text-green-900 mr-3">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <?php if ($can_update): ?>
                         <button onclick="editMedicalRecord(<?php echo htmlspecialchars(json_encode($emp)); ?>)" 
-                                class="text-blue-600 hover:text-blue-900">
+                                class="text-blue-600 hover:text-blue-900 <?php echo !$can_update ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                                <?php echo !$can_update ? 'disabled title="You do not have permission to edit medical records"' : ''; ?>>
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -486,6 +485,148 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- Delete Medical Record Confirmation Modal -->
+<div id="deleteMedicalRecordModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-[70]">
+    <div class="relative top-20 mx-auto p-0 border w-full max-w-md shadow-2xl rounded-xl bg-white mb-20">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-t-xl p-6">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-center">Confirm Deletion</h3>
+        </div>
+        
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <p class="text-gray-700 text-lg mb-2">Are you sure you want to delete this medical record?</p>
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mt-4">
+                    <p class="text-sm text-gray-600 mb-1">
+                        <strong class="text-gray-900">Employee:</strong> <span id="delete_employee_name" class="text-gray-700"></span>
+                    </p>
+                    <p class="text-sm text-gray-600 mb-1">
+                        <strong class="text-gray-900">Date:</strong> <span id="delete_record_date" class="text-gray-700"></span>
+                    </p>
+                    <p class="text-sm text-gray-600">
+                        <strong class="text-gray-900">Type:</strong> <span id="delete_record_type" class="text-gray-700"></span>
+                    </p>
+                </div>
+                <p class="text-red-600 text-sm font-semibold mt-4">
+                    <i class="fas fa-exclamation-circle mr-1"></i>This action cannot be undone!
+                </p>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <button onclick="closeDeleteMedicalRecordModal()" 
+                        class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-semibold">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </button>
+                <button id="confirmDeleteBtn" onclick="deleteMedicalRecord()" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete Record
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Medical History Success Modal -->
+<div id="addMedicalHistorySuccessModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-[70]">
+    <div class="relative top-20 mx-auto p-0 border w-full max-w-md shadow-2xl rounded-xl bg-white mb-20">
+        <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-t-xl p-6">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-3xl"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-center">Success!</h3>
+        </div>
+        
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-red-600 text-4xl"></i>
+                </div>
+                <p class="text-gray-700 text-lg font-semibold mb-2" id="addMedicalHistorySuccessMessage">Medical history record added successfully!</p>
+                <p class="text-gray-600 text-sm" id="addMedicalHistorySuccessDetails">The record has been saved and will appear in the medical history timeline.</p>
+            </div>
+            
+            <div class="flex justify-center pt-4 border-t">
+                <button onclick="closeAddMedicalHistorySuccessModal()" 
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                    <i class="fas fa-check mr-2"></i>OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Attachments Modal -->
+<div id="viewAttachmentsModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-[80]">
+    <div class="relative top-10 mx-auto p-6 border w-full max-w-5xl shadow-2xl rounded-xl bg-white mb-10">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-gray-900">
+                <i class="fas fa-file-medical text-blue-600 mr-2"></i>Medical Certificate Attachments
+            </h3>
+            <button onclick="closeViewAttachmentsModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="viewAttachmentsContent" class="max-h-[70vh] overflow-y-auto">
+            <!-- Attachments will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- View Full Image Modal -->
+<div id="viewFullImageModal" class="fixed inset-0 bg-black bg-opacity-90 overflow-y-auto h-full w-full hidden z-[90]">
+    <div class="relative top-10 mx-auto p-6 w-full max-w-6xl mb-10">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-white" id="fullImageName">
+                <!-- Image name will be loaded here -->
+            </h3>
+            <button onclick="closeViewFullImageModal()" class="text-white hover:text-gray-300 text-2xl bg-black bg-opacity-50 rounded-full p-2">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="bg-white rounded-lg p-4">
+            <img id="fullImageSrc" src="" alt="" class="max-w-full h-auto mx-auto rounded-lg shadow-lg">
+        </div>
+    </div>
+</div>
+
+<!-- Delete Success Modal -->
+<div id="deleteSuccessModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 overflow-y-auto h-full w-full hidden z-[70]">
+    <div class="relative top-20 mx-auto p-0 border w-full max-w-md shadow-2xl rounded-xl bg-white mb-20">
+        <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-xl p-6">
+            <div class="flex items-center justify-center mb-4">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check-circle text-3xl"></i>
+                </div>
+            </div>
+            <h3 class="text-2xl font-bold text-center">Success!</h3>
+        </div>
+        
+        <div class="p-6">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check text-green-600 text-4xl"></i>
+                </div>
+                <p class="text-gray-700 text-lg font-semibold mb-2">Medical record deleted successfully!</p>
+                <p class="text-gray-600 text-sm">The record has been permanently removed from the system.</p>
+            </div>
+            
+            <div class="flex justify-center pt-4 border-t">
+                <button onclick="closeDeleteSuccessModal()" 
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                    <i class="fas fa-check mr-2"></i>OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Add Medical History Modal -->
 <div id="addMedicalHistoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-[60]">
     <div class="relative top-10 mx-auto p-6 border w-full max-w-3xl shadow-2xl rounded-xl bg-white mb-10">
@@ -498,7 +639,7 @@ include 'includes/header.php';
             </button>
         </div>
 
-        <form id="addMedicalHistoryForm" class="space-y-4">
+        <form id="addMedicalHistoryForm" enctype="multipart/form-data" class="space-y-4">
             <input type="hidden" name="employee_id" id="add_employee_id">
             
             <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4">
@@ -663,6 +804,48 @@ include 'includes/header.php';
                               class="w-full border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                               placeholder="Any additional observations or notes"></textarea>
                 </div>
+
+                <!-- Medical Certificate Attachments -->
+                <div class="md:col-span-2 border-t pt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <i class="fas fa-file-medical text-red-500 mr-1"></i>Medical Certificate Attachments
+                    </label>
+                    <div class="space-y-3">
+                        <!-- File Upload Area -->
+                        <div class="file-upload-container">
+                            <input type="file" name="medical_certificates[]" id="medicalCertificates" multiple 
+                                   accept="image/*,.pdf,.doc,.docx"
+                                   class="hidden"
+                                   onchange="handleMedicalFileSelect(this)">
+                            <div class="file-drop-area border-2 border-dashed border-red-300 rounded-lg p-6 text-center cursor-pointer hover:border-red-500 hover:bg-red-50 transition-all"
+                                 onclick="document.getElementById('medicalCertificates').click()"
+                                 ondrop="handleMedicalFileDrop(event, this)" 
+                                 ondragover="handleMedicalDragOver(event)"
+                                 ondragleave="handleMedicalDragLeave(event)">
+                                <div class="file-upload-content">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-red-400 mb-3"></i>
+                                    <p class="text-sm font-semibold text-gray-700 mb-1">
+                                        Click to upload or drag and drop medical certificates
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        JPG, PNG, PDF, DOC, DOCX (Max 10MB per file)
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-2">
+                                        Multiple files allowed
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- File Preview List -->
+                        <div id="medicalCertificatesPreview" class="space-y-2 hidden">
+                            <p class="text-xs font-semibold text-gray-600 mb-2">Selected Files:</p>
+                            <div id="medicalCertificatesList" class="space-y-2">
+                                <!-- Files will be listed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex justify-end gap-3 pt-6 border-t">
@@ -681,6 +864,13 @@ include 'includes/header.php';
 
 <script>
 function editMedicalRecord(employee) {
+    // Check if user has permission to edit (button should be disabled if not)
+    const canUpdate = <?php echo $can_update ? 'true' : 'false'; ?>;
+    if (!canUpdate) {
+        alert('You do not have permission to edit medical records. Please contact a Super Admin or Nurse.');
+        return;
+    }
+    
     document.getElementById('edit_employee_id').value = employee.id;
     document.getElementById('edit_employee_name').textContent = employee.first_name + ' ' + employee.last_name;
     document.getElementById('edit_employee_id_display').textContent = employee.employee_id;
@@ -722,8 +912,15 @@ function closeViewModal() {
 // Function to open add medical history modal
 // This function is called from the AJAX-loaded content
 var currentEmployeeForHistory = null;
+var canUpdateMedicalRecords = <?php echo $can_update ? 'true' : 'false'; ?>;
 
 function openAddHistoryModalForEmployee(employeeId, employeeName, employeeIdDisplay) {
+    // Check if user has permission to add medical records
+    if (!canUpdateMedicalRecords) {
+        alert('You do not have permission to add medical records. Please contact a Super Admin or Nurse.');
+        return;
+    }
+    
     // Store employee info
     if (typeof employeeId === 'object') {
         // If passed as object from get-medical-history.php
@@ -755,6 +952,110 @@ function openAddHistoryModalForEmployee(employeeId, employeeName, employeeIdDisp
 function closeAddMedicalHistoryModal() {
     document.getElementById('addMedicalHistoryModal').classList.add('hidden');
     document.getElementById('addMedicalHistoryForm').reset();
+    // Reset file preview
+    document.getElementById('medicalCertificatesPreview').classList.add('hidden');
+    document.getElementById('medicalCertificatesList').innerHTML = '';
+    document.getElementById('medicalCertificates').value = '';
+}
+
+// Medical Certificate File Upload Functions
+function handleMedicalFileSelect(input) {
+    const files = Array.from(input.files);
+    if (files.length > 0) {
+        displayMedicalFilePreview(files);
+    }
+}
+
+function handleMedicalDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.add('border-red-500', 'bg-red-50');
+}
+
+function handleMedicalDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.classList.remove('border-red-500', 'bg-red-50');
+}
+
+function handleMedicalFileDrop(event, dropArea) {
+    event.preventDefault();
+    event.stopPropagation();
+    dropArea.classList.remove('border-red-500', 'bg-red-50');
+    
+    const files = Array.from(event.dataTransfer.files);
+    if (files.length > 0) {
+        const fileInput = document.getElementById('medicalCertificates');
+        const dataTransfer = new DataTransfer();
+        files.forEach(file => dataTransfer.items.add(file));
+        fileInput.files = dataTransfer.files;
+        displayMedicalFilePreview(files);
+    }
+}
+
+function displayMedicalFilePreview(files) {
+    const previewContainer = document.getElementById('medicalCertificatesPreview');
+    const fileList = document.getElementById('medicalCertificatesList');
+    
+    fileList.innerHTML = '';
+    
+    files.forEach((file, index) => {
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // Convert to MB
+        const fileType = file.type;
+        const isImage = fileType.startsWith('image/');
+        const isPDF = fileType === 'application/pdf';
+        
+        let iconClass = 'fa-file';
+        let iconColor = 'text-gray-500';
+        
+        if (isImage) {
+            iconClass = 'fa-file-image';
+            iconColor = 'text-blue-500';
+        } else if (isPDF) {
+            iconClass = 'fa-file-pdf';
+            iconColor = 'text-red-500';
+        } else if (fileType.includes('word') || fileType.includes('document')) {
+            iconClass = 'fa-file-word';
+            iconColor = 'text-blue-600';
+        }
+        
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200';
+        fileItem.innerHTML = `
+            <div class="flex items-center flex-1 min-w-0">
+                <i class="fas ${iconClass} ${iconColor} text-xl mr-3"></i>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">${file.name}</p>
+                    <p class="text-xs text-gray-500">${fileSize} MB</p>
+                </div>
+            </div>
+            <button type="button" onclick="removeMedicalFile(${index})" 
+                    class="ml-3 text-red-600 hover:text-red-800 hover:bg-red-50 p-2 rounded transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        fileList.appendChild(fileItem);
+    });
+    
+    previewContainer.classList.remove('hidden');
+}
+
+function removeMedicalFile(index) {
+    const fileInput = document.getElementById('medicalCertificates');
+    const files = Array.from(fileInput.files);
+    files.splice(index, 1);
+    
+    const dataTransfer = new DataTransfer();
+    files.forEach(file => dataTransfer.items.add(file));
+    fileInput.files = dataTransfer.files;
+    
+    if (files.length > 0) {
+        displayMedicalFilePreview(files);
+    } else {
+        document.getElementById('medicalCertificatesPreview').classList.add('hidden');
+        document.getElementById('medicalCertificatesList').innerHTML = '';
+    }
 }
 
 // Handle add medical history form submission
@@ -776,12 +1077,24 @@ document.getElementById('addMedicalHistoryForm').addEventListener('submit', func
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
-            alert('Medical history record added successfully!');
-            // Close modal
+            // Close add modal first
             closeAddMedicalHistoryModal();
-            // Reload page to show updated data
-            window.location.reload();
+            
+            // Set success message
+            let message = 'Medical history record added successfully!';
+            let details = 'The record has been saved and will appear in the medical history timeline.';
+            
+            if (data.attachments_count && data.attachments_count > 0) {
+                details = `The record has been saved with ${data.attachments_count} certificate${data.attachments_count > 1 ? 's' : ''} attached.`;
+            }
+            
+            document.getElementById('addMedicalHistorySuccessMessage').textContent = message;
+            document.getElementById('addMedicalHistorySuccessDetails').textContent = details;
+            
+            // Show success modal
+            showAddMedicalHistorySuccessModal();
+            
+            // Reload page after modal is closed
         } else {
             alert('Error: ' + data.message);
             submitBtn.disabled = false;
@@ -793,5 +1106,263 @@ document.getElementById('addMedicalHistoryForm').addEventListener('submit', func
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });
+});
+
+// Delete Medical Record Functions
+var recordToDelete = null;
+var currentEmployeeIdForDelete = null;
+
+function confirmDeleteMedicalRecord(recordId, employeeId, employeeName, recordDate, recordType) {
+    // Check if user has permission to delete medical records
+    if (!canUpdateMedicalRecords) {
+        alert('You do not have permission to delete medical records. Please contact a Super Admin or Nurse.');
+        return;
+    }
+    
+    recordToDelete = recordId;
+    currentEmployeeIdForDelete = employeeId;
+    
+    // Set modal content
+    document.getElementById('delete_employee_name').textContent = employeeName;
+    document.getElementById('delete_record_date').textContent = recordDate;
+    document.getElementById('delete_record_type').textContent = recordType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    
+    // Show modal
+    document.getElementById('deleteMedicalRecordModal').classList.remove('hidden');
+}
+
+function closeDeleteMedicalRecordModal() {
+    document.getElementById('deleteMedicalRecordModal').classList.add('hidden');
+    recordToDelete = null;
+    currentEmployeeIdForDelete = null;
+}
+
+function showAddMedicalHistorySuccessModal() {
+    document.getElementById('addMedicalHistorySuccessModal').classList.remove('hidden');
+}
+
+function closeAddMedicalHistorySuccessModal() {
+    document.getElementById('addMedicalHistorySuccessModal').classList.add('hidden');
+    // Reload page to show updated data
+    window.location.reload();
+}
+
+function showDeleteSuccessModal() {
+    document.getElementById('deleteSuccessModal').classList.remove('hidden');
+}
+
+function closeDeleteSuccessModal() {
+    document.getElementById('deleteSuccessModal').classList.add('hidden');
+    
+    // Reload the medical history if view modal is open
+    const viewModal = document.getElementById('viewMedicalModal');
+    if (viewModal && !viewModal.classList.contains('hidden')) {
+        // Reload the medical history content
+        if (currentEmployeeIdForDelete) {
+            viewEmployeeMedical(currentEmployeeIdForDelete);
+        } else {
+            // Fallback: reload the page
+            window.location.reload();
+        }
+    } else {
+        // Reload the page to show updated data
+        window.location.reload();
+    }
+}
+
+function deleteMedicalRecord() {
+    if (!recordToDelete) {
+        alert('No record selected for deletion');
+        return;
+    }
+    
+    // Get delete button and show loading state
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    const originalText = deleteBtn ? deleteBtn.innerHTML : '';
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Deleting...';
+    }
+    
+    // Make AJAX request to delete endpoint
+    fetch('delete-medical-history.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            record_id: recordToDelete
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close confirmation modal
+            closeDeleteMedicalRecordModal();
+            
+            // Show success modal
+            showDeleteSuccessModal();
+            
+            // Reload the medical history if view modal is open after a short delay
+            setTimeout(() => {
+                const viewModal = document.getElementById('viewMedicalModal');
+                if (viewModal && !viewModal.classList.contains('hidden')) {
+                    // Reload the medical history content
+                    if (currentEmployeeIdForDelete) {
+                        viewEmployeeMedical(currentEmployeeIdForDelete);
+                    } else {
+                        // Fallback: reload the page
+                        window.location.reload();
+                    }
+                } else {
+                    // Reload the page to show updated data
+                    window.location.reload();
+                }
+            }, 1500); // Wait 1.5 seconds before reloading
+        } else {
+            alert('Error: ' + (data.message || 'Failed to delete medical record'));
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
+        }
+    })
+    .catch(error => {
+        alert('Error deleting medical record. Please try again.');
+        console.error('Error:', error);
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+        }
+    });
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteMedicalRecordModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteMedicalRecordModal();
+    }
+});
+
+document.getElementById('addMedicalHistorySuccessModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAddMedicalHistorySuccessModal();
+    }
+});
+
+document.getElementById('deleteSuccessModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteSuccessModal();
+    }
+});
+
+// View Medical Attachments Modal Functions
+function viewMedicalAttachments(recordId, attachments) {
+    if (!attachments || attachments.length === 0) {
+        alert('No attachments available for this record.');
+        return;
+    }
+    
+    const modal = document.getElementById('viewAttachmentsModal');
+    const content = document.getElementById('viewAttachmentsContent');
+    
+    // Build attachments HTML
+    let attachmentsHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+    
+    attachments.forEach((attachment, index) => {
+        const fileExt = attachment.file_name.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+        const isPDF = fileExt === 'pdf';
+        const isDoc = ['doc', 'docx'].includes(fileExt);
+        
+        let iconClass = 'fa-file';
+        let iconColor = 'text-gray-500';
+        
+        if (isImage) {
+            iconClass = 'fa-file-image';
+            iconColor = 'text-blue-500';
+        } else if (isPDF) {
+            iconClass = 'fa-file-pdf';
+            iconColor = 'text-red-500';
+        } else if (isDoc) {
+            iconClass = 'fa-file-word';
+            iconColor = 'text-blue-600';
+        }
+        
+        const fileSizeMB = (attachment.file_size / 1024 / 1024).toFixed(2);
+        
+        attachmentsHTML += `
+            <div class="bg-white border-2 border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center flex-1 min-w-0">
+                        <i class="fas ${iconClass} ${iconColor} text-2xl mr-3"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-gray-900 truncate">${escapeHtml(attachment.file_name)}</p>
+                            <p class="text-sm text-gray-500">${fileSizeMB} MB</p>
+                        </div>
+                    </div>
+                </div>
+                ${isImage ? `
+                    <div class="mb-3 rounded-lg overflow-hidden border border-gray-200">
+                        <img src="${escapeHtml(attachment.file_path)}" 
+                             alt="${escapeHtml(attachment.file_name)}"
+                             class="w-full h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="viewFullImage('${escapeHtml(attachment.file_path)}', '${escapeHtml(attachment.file_name)}')">
+                    </div>
+                ` : ''}
+                <div class="flex gap-2">
+                    <a href="${escapeHtml(attachment.file_path)}" 
+                       target="_blank"
+                       class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center">
+                        <i class="fas fa-external-link-alt mr-1"></i>View
+                    </a>
+                    <a href="${escapeHtml(attachment.file_path)}" 
+                       download="${escapeHtml(attachment.file_name)}"
+                       class="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors text-center">
+                        <i class="fas fa-download mr-1"></i>Download
+                    </a>
+                </div>
+            </div>
+        `;
+    });
+    
+    attachmentsHTML += '</div>';
+    content.innerHTML = attachmentsHTML;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeViewAttachmentsModal() {
+    document.getElementById('viewAttachmentsModal').classList.add('hidden');
+}
+
+function viewFullImage(imagePath, imageName) {
+    const modal = document.getElementById('viewFullImageModal');
+    document.getElementById('fullImageSrc').src = imagePath;
+    document.getElementById('fullImageName').textContent = imageName;
+    modal.classList.remove('hidden');
+}
+
+function closeViewFullImageModal() {
+    document.getElementById('viewFullImageModal').classList.add('hidden');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Close modals when clicking outside
+document.getElementById('viewAttachmentsModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeViewAttachmentsModal();
+    }
+});
+
+document.getElementById('viewFullImageModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeViewFullImageModal();
+    }
 });
 </script>

@@ -1333,4 +1333,5 @@ document.getElementById('addMedicalHistoryForm').addEventListener('submit', func
 });
 </script>
 
-<?php include 'includes/footer.php'; ?>
+</body>
+</html>

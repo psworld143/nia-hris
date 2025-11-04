@@ -92,13 +92,109 @@ mysqli_stmt_bind_param($stmt, "issssssssssssi",
 );
 
 if (mysqli_stmt_execute($stmt)) {
+    $record_id = mysqli_insert_id($conn);
+    
+    // Handle file uploads for medical certificates
+    $uploaded_files = [];
+    $upload_dir = __DIR__ . '/uploads/medical-certificates/';
+    
+    // Create upload directory if it doesn't exist
+    if (!file_exists($upload_dir)) {
+        if (mkdir($upload_dir, 0755, true)) {
+            chmod($upload_dir, 0755);
+        }
+    } else {
+        // Ensure existing directory has correct permissions
+        chmod($upload_dir, 0755);
+    }
+    
+    // Process uploaded files
+    if (isset($_FILES['medical_certificates']) && !empty($_FILES['medical_certificates']['name'][0])) {
+        $files = $_FILES['medical_certificates'];
+        $file_count = count($files['name']);
+        
+        // Allowed file types
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        $max_file_size = 10 * 1024 * 1024; // 10MB
+        
+        for ($i = 0; $i < $file_count; $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $file_name = $files['name'][$i];
+                $file_tmp = $files['tmp_name'][$i];
+                $file_size = $files['size'][$i];
+                $file_type = $files['type'][$i];
+                
+                // Validate file size
+                if ($file_size > $max_file_size) {
+                    continue; // Skip files that are too large
+                }
+                
+                // Validate file type
+                if (!in_array($file_type, $allowed_types)) {
+                    continue; // Skip invalid file types
+                }
+                
+                // Generate unique filename
+                $file_extension = pathinfo($file_name, PATHINFO_EXTENSION);
+                $unique_filename = 'medical_cert_' . $record_id . '_' . $employee_id . '_' . time() . '_' . $i . '.' . $file_extension;
+                $file_path = $upload_dir . $unique_filename;
+                
+                // Move uploaded file
+                if (move_uploaded_file($file_tmp, $file_path)) {
+                    // Set proper file permissions (readable by web server, writable by owner)
+                    chmod($file_path, 0644);
+                    // Check if medical_history_attachments table exists
+                    $table_check = mysqli_query($conn, "SHOW TABLES LIKE 'medical_history_attachments'");
+                    if (mysqli_num_rows($table_check) > 0) {
+                        // Save to database
+                        $relative_path = '/uploads/medical-certificates/' . $unique_filename;
+                        $attachment_query = "INSERT INTO medical_history_attachments 
+                                            (medical_history_id, file_path, file_name, file_size, file_type, uploaded_by, created_at) 
+                                            VALUES (?, ?, ?, ?, ?, ?, NOW())";
+                        $attachment_stmt = mysqli_prepare($conn, $attachment_query);
+                        if ($attachment_stmt) {
+                            $uploaded_by = $_SESSION['user_id'];
+                            
+                            mysqli_stmt_bind_param($attachment_stmt, "issisi", 
+                                $record_id, $relative_path, $file_name, $file_size, $file_type, $uploaded_by
+                            );
+                            
+                            if (mysqli_stmt_execute($attachment_stmt)) {
+                                $uploaded_files[] = $file_name;
+                            } else {
+                                // Log error but don't fail the entire operation
+                                error_log("Error inserting medical attachment: " . mysqli_error($conn) . " - File: $file_name");
+                            }
+                            
+                            mysqli_stmt_close($attachment_stmt);
+                        } else {
+                            // Log error if statement preparation failed
+                            error_log("Error preparing attachment statement: " . mysqli_error($conn) . " - File: $file_name");
+                        }
+                    } else {
+                        // Table doesn't exist, but file was uploaded successfully
+                        error_log("Warning: medical_history_attachments table does not exist. File uploaded but not linked: $file_name");
+                        $uploaded_files[] = $file_name;
+                    }
+                }
+            }
+        }
+    }
+    
     // Log activity
-    logActivity('ADD_MEDICAL_HISTORY', "Added medical history record for employee ID: $employee_id", $conn);
+    $attachment_info = !empty($uploaded_files) ? ' with ' . count($uploaded_files) . ' attachment(s)' : '';
+    logActivity('ADD_MEDICAL_HISTORY', "Added medical history record for employee ID: $employee_id" . $attachment_info, $conn);
+    
+    $message = 'Medical history record added successfully';
+    if (!empty($uploaded_files)) {
+        $message .= ' with ' . count($uploaded_files) . ' certificate(s) attached';
+    }
     
     echo json_encode([
         'success' => true, 
-        'message' => 'Medical history record added successfully',
-        'record_id' => mysqli_insert_id($conn)
+        'message' => $message,
+        'record_id' => $record_id,
+        'attachments_count' => count($uploaded_files)
     ]);
 } else {
     echo json_encode([

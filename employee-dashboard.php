@@ -166,30 +166,7 @@ include 'includes/header.php';
     </div>
 
     <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div class="grid grid-cols-2 gap-4">
-                        <a href="create-leave-request-form.php" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                    <i class="fas fa-calendar-plus text-blue-600 text-xl mr-3"></i>
-                    <span class="text-blue-800 font-medium">Request Leave</span>
-                </a>
-                <a href="employee-profile.php" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                    <i class="fas fa-user-edit text-green-600 text-xl mr-3"></i>
-                    <span class="text-green-800 font-medium">View Profile</span>
-                </a>
-                <a href="employee-payslips.php" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                    <i class="fas fa-file-invoice-dollar text-purple-600 text-xl mr-3"></i>
-                    <span class="text-purple-800 font-medium">View Payslips</span>
-                </a>
-                <a href="employee-leave-history.php" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-                    <i class="fas fa-history text-orange-600 text-xl mr-3"></i>
-                    <span class="text-orange-800 font-medium">Leave History</span>
-                </a>
-            </div>
-        </div>
-
+    <div class="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
         <!-- Recent Leave Requests -->
         <div class="bg-white rounded-lg shadow-md p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Leave Requests</h3>

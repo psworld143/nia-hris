@@ -783,30 +783,8 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div class="grid grid-cols-2 gap-4">
-                <a href="admin-employee.php" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                    <i class="fas fa-user-plus text-blue-600 text-xl mr-3"></i>
-                    <span class="text-blue-800 font-medium">Add Employee</span>
-                </a>
-                <a href="manage-departments.php" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                    <i class="fas fa-building text-green-600 text-xl mr-3"></i>
-                    <span class="text-green-800 font-medium">Manage Departments</span>
-                </a>
-                <a href="leave-management.php" class="flex items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
-                    <i class="fas fa-calendar-alt text-orange-600 text-xl mr-3"></i>
-                    <span class="text-orange-800 font-medium">Leave Management</span>
-                </a>
-                <a href="salary-structures.php" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                    <i class="fas fa-money-bill-wave text-purple-600 text-xl mr-3"></i>
-                    <span class="text-purple-800 font-medium">Salary Structures</span>
-                </a>
-            </div>
-        </div>
-
+    <!-- Recent Activities -->
+    <div class="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
         <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h3>
             <div class="space-y-3">

@@ -351,19 +351,6 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     </div>
 
-                    <!-- Leave Management Section -->
-                    <div class="animate-fadeInUp" style="animation-delay: 0.2s;">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Leave Management</h3>
-                        <div class="space-y-1">
-                            <a href="create-leave-request-form.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'create-leave-request-form.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-calendar-plus mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Request Leave
-                            </a>
-                            <a href="employee-leave-history.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'employee-leave-history.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-history mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Leave History
-                            </a>
-                        </div>
-                    </div>
-
                     <!-- Payroll Section -->
                     <div class="animate-fadeInUp" style="animation-delay: 0.25s;">
                         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Payroll</h3>
@@ -405,26 +392,6 @@ if (isset($_SESSION['user_id'])) {
                     </div>
                     <?php endif; ?>
 
-                    <?php if (in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager', 'human_resource'])): ?>
-                    <!-- Leave Management Section (Not for Nurse) -->
-                    <div class="animate-fadeInUp" style="animation-delay: 0.25s;">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Leave Management</h3>
-                        <div class="space-y-1">
-                            <a href="leave-management.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'leave-management.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-calendar-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Leave Requests
-                            </a>
-
-                            <a href="leave-allowance-management.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'leave-allowance-management.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-calendar-check mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Leave Allowance
-                            </a>
-
-                            <a href="leave-reports.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'leave-reports.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-file-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Leave Reports
-                            </a>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
                     <?php if (in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])): ?>
                     <!-- Salaries and Wages Section (Admin roles only) -->
                     <div class="animate-fadeInUp" style="animation-delay: 0.3s;">
@@ -433,28 +400,13 @@ if (isset($_SESSION['user_id'])) {
                             <a href="salary-structures.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'salary-structures.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
                                 <i class="fas fa-sitemap mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Salary Structures
                             </a>
-
-                            <a href="auto-increment-management.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'auto-increment-management.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-robot mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Auto Increment
-                            </a>
                         </div>
                     </div>
                     <?php endif; ?>
 
                     <?php if (in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])): ?>
-                    <!-- Regularization Management Section (Admin roles only) -->
+                    <!-- Education Section (Admin roles only) -->
                     <div class="animate-fadeInUp" style="animation-delay: 0.25s;">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Regularization</h3>
-                        <div class="space-y-1">
-                            <a href="regularization-criteria.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'regularization-criteria.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-list-ul mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Regularization Criteria
-                            </a>
-
-                            <a href="manage-regularization.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'manage-regularization.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-clipboard-check mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Regularization List
-                            </a>
-                        </div>
-                        <br>
                         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Education</h3>
                         <div class="space-y-1">
                             <a href="manage-degrees.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'manage-degrees.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
@@ -465,36 +417,12 @@ if (isset($_SESSION['user_id'])) {
                     <?php endif; ?>
 
                     <?php if (in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])): ?>
-                    <!-- Employee Benefits Section (Admin roles only) -->
+                    <!-- DTR Management Section (Admin roles only) -->
                     <div class="animate-fadeInUp" style="animation-delay: 0.3s;">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Employee Benefits</h3>
+                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Time Management</h3>
                         <div class="space-y-1">
-                            <a href="government-benefits.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'government-benefits.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-shield-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Government Benefits
-                            </a>
-                            
-                            <a href="payroll-management.php" class="flex items-center <?php echo in_array(basename($_SERVER['PHP_SELF']), ['payroll-management.php', 'payroll-process.php', 'payroll-view.php', 'payroll-reports.php']) ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-money-check-alt mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Payroll Management
-                            </a>
-                            
                             <a href="dtr-management.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'dtr-management.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
                                 <i class="fas fa-clock mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>DTR Cards
-                            </a>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if (in_array($_SESSION['role'], ['super_admin', 'admin', 'hr_manager'])): ?>
-                    <!-- Performance Management Section (Admin roles only) -->
-                    <div class="animate-fadeInUp" style="animation-delay: 0.35s;">
-                        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Performance</h3>
-                        <div class="space-y-1">
-                            <a href="performance-reviews.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'performance-reviews.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-star mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Performance Reviews
-                            </a>
-
-                            <a href="training-programs.php" class="flex items-center <?php echo basename($_SERVER['PHP_SELF']) === 'training-programs.php' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white'; ?> px-3 py-2 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-md">
-                                <i class="fas fa-chalkboard-teacher mr-3 w-5 text-center transition-transform duration-200 hover:rotate-12"></i>Training Programs
                             </a>
                         </div>
                     </div>

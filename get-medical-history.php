@@ -59,6 +59,27 @@ mysqli_stmt_execute($history_stmt);
 $history_result = mysqli_stmt_get_result($history_stmt);
 $medical_history = [];
 while ($record = mysqli_fetch_assoc($history_result)) {
+    // Get attachments for this record (check if table exists first)
+    $record['attachments'] = [];
+    
+    // Check if medical_history_attachments table exists
+    $table_check = mysqli_query($conn, "SHOW TABLES LIKE 'medical_history_attachments'");
+    if (mysqli_num_rows($table_check) > 0) {
+        $attachments_query = "SELECT * FROM medical_history_attachments 
+                             WHERE medical_history_id = ? 
+                             ORDER BY created_at ASC";
+        $attachments_stmt = mysqli_prepare($conn, $attachments_query);
+        if ($attachments_stmt) {
+            mysqli_stmt_bind_param($attachments_stmt, "i", $record['id']);
+            mysqli_stmt_execute($attachments_stmt);
+            $attachments_result = mysqli_stmt_get_result($attachments_stmt);
+            while ($attachment = mysqli_fetch_assoc($attachments_result)) {
+                $record['attachments'][] = $attachment;
+            }
+            mysqli_stmt_close($attachments_stmt);
+        }
+    }
+    
     $medical_history[] = $record;
 }
 
@@ -78,12 +99,11 @@ while ($record = mysqli_fetch_assoc($history_result)) {
                 <p class="opacity-90"><?php echo htmlspecialchars($employee['employee_id']); ?> • <?php echo htmlspecialchars($employee['department']); ?></p>
             </div>
         </div>
-        <?php if ($can_update): ?>
         <button onclick="parent.openAddHistoryModalForEmployee(<?php echo $employee['id']; ?>, '<?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']); ?>', '<?php echo htmlspecialchars($employee['employee_id']); ?>')" 
-                class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold">
+                class="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors font-semibold <?php echo !$can_update ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                <?php echo !$can_update ? 'disabled title="You do not have permission to add medical records"' : ''; ?>>
             <i class="fas fa-plus mr-2"></i>Add History Record
         </button>
-        <?php endif; ?>
     </div>
 </div>
 
@@ -136,12 +156,11 @@ while ($record = mysqli_fetch_assoc($history_result)) {
         </div>
         <p class="text-gray-600 text-lg mb-2">No medical history records yet</p>
         <p class="text-gray-500 text-sm mb-4">Start tracking medical events by adding the first record</p>
-        <?php if ($can_update): ?>
         <button onclick="parent.openAddHistoryModalForEmployee(<?php echo $employee['id']; ?>, '<?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']); ?>', '<?php echo htmlspecialchars($employee['employee_id']); ?>')" 
-                class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors <?php echo !$can_update ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                <?php echo !$can_update ? 'disabled title="You do not have permission to add medical records"' : ''; ?>>
             <i class="fas fa-plus mr-2"></i>Add First Record
         </button>
-        <?php endif; ?>
     </div>
     <?php else: ?>
     <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
@@ -264,10 +283,70 @@ while ($record = mysqli_fetch_assoc($history_result)) {
                     <p class="text-sm text-yellow-900 mt-1"><?php echo nl2br(htmlspecialchars($record['lab_results'])); ?></p>
                 </div>
                 <?php endif; ?>
+                
+                <!-- Medical Certificate Attachments -->
+                <?php if (!empty($record['attachments'])): ?>
+                <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-blue-800">
+                            <i class="fas fa-file-medical mr-1"></i>Medical Certificates (<?php echo count($record['attachments']); ?>)
+                        </span>
+                        <button onclick="parent.viewMedicalAttachments(<?php echo $record['id']; ?>, <?php echo htmlspecialchars(json_encode($record['attachments'])); ?>)" 
+                                class="text-xs font-semibold text-blue-600 hover:text-blue-800 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
+                            <i class="fas fa-eye mr-1"></i>View All
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                        <?php foreach (array_slice($record['attachments'], 0, 2) as $attachment): ?>
+                            <?php
+                            $file_ext = strtolower(pathinfo($attachment['file_name'], PATHINFO_EXTENSION));
+                            $is_image = in_array($file_ext, ['jpg', 'jpeg', 'png', 'gif']);
+                            $is_pdf = $file_ext === 'pdf';
+                            $is_doc = in_array($file_ext, ['doc', 'docx']);
+                            
+                            $icon_class = 'fa-file';
+                            $icon_color = 'text-gray-500';
+                            
+                            if ($is_image) {
+                                $icon_class = 'fa-file-image';
+                                $icon_color = 'text-blue-500';
+                            } elseif ($is_pdf) {
+                                $icon_class = 'fa-file-pdf';
+                                $icon_color = 'text-red-500';
+                            } elseif ($is_doc) {
+                                $icon_class = 'fa-file-word';
+                                $icon_color = 'text-blue-600';
+                            }
+                            
+                            $file_size_mb = number_format($attachment['file_size'] / 1024 / 1024, 2);
+                            ?>
+                            <a href="<?php echo htmlspecialchars($attachment['file_path']); ?>" 
+                               target="_blank"
+                               class="flex items-center justify-between p-2 bg-white rounded border border-blue-200 hover:bg-blue-100 transition-colors group">
+                                <div class="flex items-center flex-1 min-w-0">
+                                    <i class="fas <?php echo $icon_class; ?> <?php echo $icon_color; ?> mr-2"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-medium text-gray-900 truncate group-hover:text-blue-700">
+                                            <?php echo htmlspecialchars($attachment['file_name']); ?>
+                                        </p>
+                                        <p class="text-xs text-gray-500"><?php echo $file_size_mb; ?> MB</p>
+                                    </div>
+                                </div>
+                                <i class="fas fa-external-link-alt text-gray-400 group-hover:text-blue-600 ml-2"></i>
+                            </a>
+                        <?php endforeach; ?>
+                        <?php if (count($record['attachments']) > 2): ?>
+                            <div class="flex items-center justify-center p-2 bg-white rounded border border-blue-200 text-blue-600 text-xs font-semibold">
+                                +<?php echo count($record['attachments']) - 2; ?> more
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             
-            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
-                <div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                <div class="text-xs text-gray-600">
                     <?php if ($record['doctor_name']): ?>
                         <i class="fas fa-user-md mr-1"></i><?php echo htmlspecialchars($record['doctor_name']); ?>
                     <?php endif; ?>
@@ -275,11 +354,18 @@ while ($record = mysqli_fetch_assoc($history_result)) {
                         <span class="ml-3"><i class="fas fa-hospital mr-1"></i><?php echo htmlspecialchars($record['clinic_hospital']); ?></span>
                     <?php endif; ?>
                 </div>
-                <?php if ($record['follow_up_date']): ?>
-                <span class="text-orange-600 font-semibold">
-                    <i class="fas fa-calendar-check mr-1"></i>Follow-up: <?php echo date('M j, Y', strtotime($record['follow_up_date'])); ?>
-                </span>
-                <?php endif; ?>
+                <div class="flex items-center gap-3">
+                    <?php if ($record['follow_up_date']): ?>
+                    <span class="text-orange-600 font-semibold text-xs">
+                        <i class="fas fa-calendar-check mr-1"></i>Follow-up: <?php echo date('M j, Y', strtotime($record['follow_up_date'])); ?>
+                    </span>
+                    <?php endif; ?>
+                    <button onclick="parent.confirmDeleteMedicalRecord(<?php echo $record['id']; ?>, <?php echo $employee['id']; ?>, '<?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']); ?>', '<?php echo date('F j, Y', strtotime($record['record_date'])); ?>', '<?php echo htmlspecialchars($record['record_type']); ?>')" 
+                            class="text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition-colors text-xs font-semibold <?php echo !$can_update ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                            <?php echo !$can_update ? 'disabled title="You do not have permission to delete medical records"' : ''; ?>>
+                        <i class="fas fa-trash-alt mr-1"></i>Delete
+                    </button>
+                </div>
             </div>
         </div>
         <?php endforeach; ?>
